@@ -30,7 +30,10 @@ export const signup = asyncHandler(async (req, res, next) => {
       phoneNumber, 
       dob, 
       password,
+      socialType = 'normal',
+      socialId,
       profileImage,
+      theme,
       deviceType,
       deviceToken
     } = req.body;

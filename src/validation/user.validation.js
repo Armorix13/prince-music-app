@@ -95,10 +95,35 @@ export const userSignupSchema = Joi.object({
     .messages({
       'string.empty': 'Device token is required',
       'any.required': 'Device token is required'
+    }),
+  
+  socialType: Joi.string()
+    .valid('google', 'facebook', 'apple', 'normal')
+    .default('normal')
+    .optional()
+    .messages({
+      'any.only': 'Social type must be one of: google, facebook, apple, normal'
+    }),
+  
+  socialId: Joi.string()
+    .optional()
+    .messages({
+      'string.empty': 'Social ID cannot be empty'
+    }),
+  
+  profileImage: Joi.string()
+    .uri()
+    .optional()
+    .messages({
+      'string.uri': 'Profile image must be a valid URL'
+    }),
+  
+  theme: Joi.string()
+    .optional()
+    .messages({
+      'string.empty': 'Theme cannot be empty'
     })
 });
-
-// User login validation schema
 export const userLoginSchema = Joi.object({
   email: Joi.string()
     .email()
