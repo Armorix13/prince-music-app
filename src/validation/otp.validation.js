@@ -169,17 +169,6 @@ export const passwordResetSchema = Joi.object({
       'any.required': 'Email is required'
     }),
   
-  otp: Joi.string()
-    .length(6)
-    .pattern(/^\d{6}$/)
-    .required()
-    .messages({
-      'string.empty': 'OTP is required',
-      'string.length': 'OTP must be exactly 6 digits',
-      'string.pattern.base': 'OTP must contain only numbers',
-      'any.required': 'OTP is required'
-    }),
-  
   newPassword: Joi.string()
     .min(8)
     .max(128)

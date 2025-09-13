@@ -17,7 +17,7 @@ import {
   responseUtils 
 } from '../utils/helpers.js';
 import { User } from '../model/user.model.js';
-import emailService from '../services/emailService.js';
+import { tokenBlacklist } from '../services/tokenBlacklist.js';
 
 // User signup controller
 export const signup = asyncHandler(async (req, res, next) => {
@@ -41,7 +41,14 @@ export const signup = asyncHandler(async (req, res, next) => {
     // Check if user already exists by email
     const existingUserByEmail = await User.findOne({ email: emailUtils.normalizeEmail(email) });
     if (existingUserByEmail) {
-      throw new ConflictError('User with this email already exists');
+      // If user exists but email is not verified, allow re-registration
+      if (!existingUserByEmail.isEmailVerified) {
+        // Delete the unverified user to allow re-registration
+        await User.findByIdAndDelete(existingUserByEmail._id);
+        console.log(`Deleted unverified user with email: ${email}`);
+      } else {
+        throw new ConflictError('User with this email already exists and is verified');
+      }
     }
 
     // Check if user already exists by phone (if provided)
@@ -180,6 +187,11 @@ export const login = asyncHandler(async (req, res, next) => {
     const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
     if (!user) {
       throw new UnauthorizedError('Invalid email or password');
+    }
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedError('Please verify your email before logging in. Check your email for the verification OTP.');
     }
 
     // For normal login, check password
@@ -331,6 +343,11 @@ export const requestOTP = asyncHandler(async (req, res, next) => {
     const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
     if (!user) {
       throw new NotFoundError('User not found');
+    }
+
+    // Check if email is verified for OTP requests (except for initial email verification)
+    if (!user.isEmailVerified && otpFor !== 'emailVerification') {
+      throw new UnauthorizedError('Please verify your email first before requesting OTP for other purposes');
     }
 
     // Generate new OTP
@@ -589,14 +606,55 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
 // Logout
 export const logout = asyncHandler(async (req, res, next) => {
   try {
+    // Get the access token from the request
+    let accessToken;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      accessToken = req.headers.authorization.split(' ')[1];
+    }
+
+    // Add token to blacklist to invalidate it
+    if (accessToken) {
+      tokenBlacklist.addToBlacklist(accessToken);
+    }
+
     // Clear device token
     const user = await User.findById(req.user.id);
     if (user) {
       user.deviceToken = null;
+      user.deviceType = null;
       await user.save();
     }
 
     responseUtils.success(res, 'Logged out successfully');
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Logout all devices
+export const logoutAll = asyncHandler(async (req, res, next) => {
+  try {
+    // Get the current access token
+    let currentAccessToken;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      currentAccessToken = req.headers.authorization.split(' ')[1];
+    }
+
+    // Add current token to blacklist
+    if (currentAccessToken) {
+      tokenBlacklist.addToBlacklist(currentAccessToken);
+    }
+
+    // Clear device token and generate new device token to invalidate all other sessions
+    const user = await User.findById(req.user.id);
+    if (user) {
+      user.deviceToken = null;
+      user.deviceType = null;
+      await user.save();
+    }
+
+    responseUtils.success(res, 'Logged out from all devices successfully');
 
   } catch (error) {
     next(error);
@@ -732,27 +790,12 @@ export const verifyPasswordResetOTP = asyncHandler(async (req, res, next) => {
 // Reset password after OTP verification
 export const resetPassword = asyncHandler(async (req, res, next) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { email, newPassword } = req.body;
 
     // Find user by email
     const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
     if (!user) {
       throw new NotFoundError('User not found');
-    }
-
-    // Check if OTP matches and is verified
-    if (user.otp !== otp || !user.isOtpVerified) {
-      throw new UnauthorizedError('Invalid or unverified OTP');
-    }
-
-    // Check if OTP is expired
-    if (otpUtils.isOTPExpired(user.otpCreatedAt, 10)) {
-      throw new UnauthorizedError('OTP has expired');
-    }
-
-    // Check if OTP is for password reset
-    if (user.otpFor !== 'resetPassword') {
-      throw new UnauthorizedError('OTP is not valid for password reset');
     }
 
     // Validate new password
@@ -763,11 +806,6 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
 
     // Update password
     user.password = await passwordUtils.hashPassword(newPassword);
-    user.otp = null;
-    user.otpCreatedAt = null;
-    user.otpExpiresAt = null;
-    user.otpFor = null;
-    user.isOtpVerified = false;
 
     await user.save();
 
@@ -917,6 +955,11 @@ export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
     const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
     if (!user) {
       throw new NotFoundError('User not found');
+    }
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedError('Please verify your email first before requesting password reset');
     }
 
     // Generate new OTP

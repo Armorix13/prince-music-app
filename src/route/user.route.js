@@ -15,6 +15,7 @@ import {
   getUserProfile, 
   updateUserProfile,
   logout,
+  logoutAll,
   refreshToken,
   deleteAccount
 } from '../controller/user.controller.js';
@@ -94,6 +95,7 @@ router.use(authenticate); // All routes below require authentication
 router.get('/profile', getUserProfile);
 router.put('/profile', validateBody(userUpdateSchema), updateUserProfile);
 router.post('/logout', logout);
+router.post('/logout-all', logoutAll);
 router.delete('/account', validateBody(Joi.object({ password: Joi.string().optional() })), deleteAccount);
 
 export default router;

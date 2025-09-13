@@ -1,6 +1,7 @@
 import { jwtUtils, securityUtils } from '../utils/helpers.js';
 import { UnauthorizedError, ForbiddenError } from '../utils/customError.js';
 import { User } from '../model/user.model.js';
+import { tokenBlacklist } from '../services/tokenBlacklist.js';
 
 // Authentication middleware
 export const authenticate = async (req, res, next) => {
@@ -16,6 +17,11 @@ export const authenticate = async (req, res, next) => {
       throw new UnauthorizedError('Access denied. No token provided.');
     }
     
+    // Check if token is blacklisted (invalidated)
+    if (tokenBlacklist.isBlacklisted(token)) {
+      throw new UnauthorizedError('Token has been invalidated. Please login again.');
+    }
+    
     // Verify token
     const decoded = jwtUtils.verifyAccessToken(token);
     
@@ -26,18 +32,18 @@ export const authenticate = async (req, res, next) => {
       throw new UnauthorizedError('Token is valid but user no longer exists.');
     }
     
-    // Check if user is active
-    if (!user.isActive) {
+    // Check if user is active (only if isActive field exists)
+    if (user.isActive !== undefined && !user.isActive) {
       throw new ForbiddenError('Account is deactivated.');
     }
     
-    // Check if user is blocked
-    if (user.isBlocked) {
+    // Check if user is blocked (only if isBlocked field exists)
+    if (user.isBlocked !== undefined && user.isBlocked) {
       throw new ForbiddenError('Account is blocked.');
     }
     
-    // Check if account is locked
-    if (user.isAccountLocked()) {
+    // Check if account is locked (only if method exists)
+    if (typeof user.isAccountLocked === 'function' && user.isAccountLocked()) {
       throw new ForbiddenError('Account is temporarily locked due to multiple failed login attempts.');
     }
     
