@@ -18,6 +18,7 @@ import {
 } from '../utils/helpers.js';
 import { User } from '../model/user.model.js';
 import { tokenBlacklist } from '../services/tokenBlacklist.js';
+import emailService from '../services/emailService.js';
 
 // User signup controller
 export const signup = asyncHandler(async (req, res, next) => {
@@ -122,10 +123,6 @@ export const signup = asyncHandler(async (req, res, next) => {
 
     const user = await User.create(userData);
 
-    // Generate tokens
-    const accessToken = jwtUtils.generateAccessToken({ id: user._id });
-    const refreshToken = jwtUtils.generateRefreshToken({ id: user._id });
-
     // TODO: Send OTP email
     // await emailService.sendOTPEmail(user.email, otp);
 
@@ -162,10 +159,6 @@ export const signup = asyncHandler(async (req, res, next) => {
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,
         createdAt: user.createdAt
-      },
-      tokens: {
-        accessToken,
-        refreshToken
       },
       otp: {
         expiresAt: otpExpiresAt,

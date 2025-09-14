@@ -34,11 +34,8 @@
       "isEmailVerified": false,
       "isOtpVerified": false
     },
-    "tokens": {
-      "accessToken": "jwt_token",
-      "refreshToken": "refresh_token"
-    },
-    "otp": {
+
+"otp": {
       "expiresAt": "2024-01-01T10:10:00Z",
       "expiresIn": "10 minutes"
     }
