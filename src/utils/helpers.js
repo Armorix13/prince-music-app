@@ -49,63 +49,12 @@ export const passwordUtils = {
       errors.push('Password must be at least 8 characters long');
     }
     
-    if (password.length > 128) {
-      errors.push('Password cannot exceed 128 characters');
-    }
-    
-    if (!/[a-z]/.test(password)) {
-      errors.push('Password must contain at least one lowercase letter');
-    }
-    
-    if (!/[A-Z]/.test(password)) {
-      errors.push('Password must contain at least one uppercase letter');
-    }
-    
-    if (!/\d/.test(password)) {
-      errors.push('Password must contain at least one number');
-    }
-    
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      errors.push('Password must contain at least one special character');
-    }
-    
-    // Check for common weak patterns
-    const commonPatterns = [
-      /(.)\1{2,}/, // Repeated characters
-      /123|234|345|456|567|678|789|890/, // Sequential numbers
-      /abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz/i, // Sequential letters
-      /password|123456|qwerty|admin|letmein/i // Common passwords
-    ];
-    
-    for (const pattern of commonPatterns) {
-      if (pattern.test(password)) {
-        errors.push('Password contains weak patterns');
-        break;
-      }
-    }
-    
     return {
       isValid: errors.length === 0,
-      errors,
-      strength: this.calculatePasswordStrength(password)
+      errors
     };
   },
 
-  // Calculate password strength score
-  calculatePasswordStrength(password) {
-    let score = 0;
-    
-    if (password.length >= 8) score += 1;
-    if (password.length >= 12) score += 1;
-    if (/[a-z]/.test(password)) score += 1;
-    if (/[A-Z]/.test(password)) score += 1;
-    if (/\d/.test(password)) score += 1;
-    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 1;
-    if (password.length >= 16) score += 1;
-    
-    const strengthLevels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong', 'Excellent'];
-    return strengthLevels[Math.min(score, strengthLevels.length - 1)];
-  }
 };
 
 // JWT utilities
