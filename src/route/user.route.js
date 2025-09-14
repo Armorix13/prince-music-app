@@ -46,8 +46,8 @@ import {
 const router = express.Router();
 
 // Apply rate limiting and device tracking to all routes
-router.use(apiRateLimit);
-router.use(trackDevice);
+// router.use(apiRateLimit);
+// router.use(trackDevice);
 
 // Public routes (no authentication required)
 router.post('/signup', validateBody(userSignupSchema), signup);
