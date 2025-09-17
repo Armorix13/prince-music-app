@@ -1,5 +1,6 @@
 import express from 'express';
 import userRoutes from './user.route.js';
+import portfolioRoutes from './portfolio.route.js';
 
 const router = express.Router();
 
@@ -7,6 +8,7 @@ const API_VERSION = '/api/v1';
 
 // Route mounting
 router.use(`${API_VERSION}/users`, userRoutes);
+router.use(`${API_VERSION}/portfolio`, portfolioRoutes);
 
 router.get('/health', (req, res) => {
   res.status(200).json({
@@ -16,5 +18,6 @@ router.get('/health', (req, res) => {
     version: '1.0.0'
   });
 });
+
 
 export default router;
