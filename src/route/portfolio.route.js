@@ -55,17 +55,17 @@ const updateContentSchema = Joi.object({
 });
 
 // Public routes (no authentication required)
-router.put('/add-update-portfolio', validateBody(portfolioSchema), createOrUpdatePortfolio);
+router.post('/add-update-portfolio', validateBody(portfolioSchema), createOrUpdatePortfolio);
 router.get('/portfolio/email/:email', getPortfolioByEmail);
 
 // Protected routes (authentication required)
-router.use(authenticate);
+// router.use(authenticate);
 
 // Portfolio management routes
-router.get('/portfolio/:princeId', getPortfolio);
-router.post('/portfolio/:princeId/section/content', validateBody(addContentSchema), addContentToSection);
-router.put('/portfolio/:princeId/section/:sectionTitle/content', validateBody(updateContentSchema), updateSectionContent);
-router.delete('/portfolio/:princeId/section/:sectionTitle', deleteSection);
-router.get('/portfolio/:princeId/sections', getPrinceSections);
+router.get('/:princeId', getPortfolio);
+router.post('/:princeId/section/content', validateBody(addContentSchema), addContentToSection);
+router.put('/:princeId/section/:sectionTitle/content', validateBody(updateContentSchema), updateSectionContent);
+router.delete('/:princeId/section/:sectionTitle', deleteSection);
+router.get('/:princeId/sections', getPrinceSections);
 
 export default router;

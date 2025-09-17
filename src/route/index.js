@@ -7,8 +7,8 @@ const router = express.Router();
 const API_VERSION = '/api/v1';
 
 // Route mounting
-router.use(`${API_VERSION}/users`, userRoutes);
 router.use(`${API_VERSION}/portfolio`, portfolioRoutes);
+router.use(`${API_VERSION}/users`, userRoutes);
 
 router.get('/health', (req, res) => {
   res.status(200).json({
