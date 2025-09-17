@@ -59,14 +59,13 @@ export const createOrUpdatePortfolio = async (req, res, next) => {
   }
 };
 
-// Add Content to Section
+// Add Content to Section (Single Prince)
 export const addContentToSection = async (req, res, next) => {
   try {
     const { sectionTitle, content } = req.body;
-    const { princeId } = req.params;
 
-    // Find Prince
-    const prince = await Prince.findById(princeId);
+    // Find the single Prince
+    const prince = await Prince.findOne({ isActive: true });
     if (!prince) {
       return next(new CustomError('Prince not found', 404));
     }
@@ -74,14 +73,14 @@ export const addContentToSection = async (req, res, next) => {
     // Find or create section
     let section = await Section.findOne({ 
       title: sectionTitle, 
-      princeId: princeId 
+      princeId: prince._id 
     });
 
     if (!section) {
       // Create new section
       section = await Section.create({
         title: sectionTitle,
-        princeId: princeId,
+        princeId: prince._id,
         content: [content]
       });
     } else {
@@ -100,20 +99,18 @@ export const addContentToSection = async (req, res, next) => {
   }
 };
 
-// Get Complete Portfolio
+// Get Complete Portfolio (Single Prince)
 export const getPortfolio = async (req, res, next) => {
   try {
-    const { princeId } = req.params;
-
-    // Find Prince
-    const prince = await Prince.findById(princeId);
+    // Find the single Prince
+    const prince = await Prince.findOne({ isActive: true });
     if (!prince) {
       return next(new CustomError('Prince not found', 404));
     }
 
     // Find all sections for this Prince
     const sections = await Section.find({ 
-      princeId: princeId,
+      princeId: prince._id,
       isActive: true 
     }).sort({ order: 1 });
 

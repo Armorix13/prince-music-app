@@ -62,8 +62,8 @@ router.get('/portfolio/email/:email', getPortfolioByEmail);
 // router.use(authenticate);
 
 // Portfolio management routes
-router.get('/:princeId', getPortfolio);
-router.post('/:princeId/section/content', validateBody(addContentSchema), addContentToSection);
+router.get('/', getPortfolio);
+router.post('/section/content', validateBody(addContentSchema), addContentToSection);
 router.put('/:princeId/section/:sectionTitle/content', validateBody(updateContentSchema), updateSectionContent);
 router.delete('/:princeId/section/:sectionTitle', deleteSection);
 router.get('/:princeId/sections', getPrinceSections);
