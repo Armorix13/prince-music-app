@@ -71,7 +71,8 @@ export const validateQuery = (schema) => {
         throw new ValidationError(errorMessages);
       }
 
-      req.query = value;
+      // Store validated query parameters in a custom property
+      req.validatedQuery = value;
       next();
     } catch (err) {
       next(err);
