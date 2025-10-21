@@ -4,7 +4,10 @@ import { CustomError } from '../utils/customError.js';
 // Add new course
 export const addCourse = async (req, res, next) => {
   try {
-    const courseData = req.body;
+    const courseData = {
+      ...req.body,
+      musicianId: req.user.musicianId // Add musicianId from authenticated user
+    };
 
     // Create new course
     const course = new Course(courseData);
@@ -26,10 +29,13 @@ export const updateCourse = async (req, res, next) => {
     const { courseId } = req.params;
     const updateData = req.body;
 
-    // Check if course exists
-    const existingCourse = await Course.findById(courseId);
+    // Check if course exists and belongs to the musician
+    const existingCourse = await Course.findOne({ 
+      _id: courseId, 
+      musicianId: req.user.musicianId 
+    });
     if (!existingCourse) {
-      throw new CustomError('Course not found', 404);
+      throw new CustomError('Course not found or access denied', 404);
     }
 
     // Update course
@@ -156,9 +162,13 @@ export const deleteCourse = async (req, res, next) => {
   try {
     const { courseId } = req.params;
 
-    const course = await Course.findById(courseId);
+    // Check if course exists and belongs to the musician
+    const course = await Course.findOne({ 
+      _id: courseId, 
+      musicianId: req.user.musicianId 
+    });
     if (!course) {
-      throw new CustomError('Course not found', 404);
+      throw new CustomError('Course not found or access denied', 404);
     }
 
     // Soft delete by setting isActive to false
@@ -177,7 +187,10 @@ export const deleteCourse = async (req, res, next) => {
 // Get course categories
 export const getCourseCategories = async (req, res, next) => {
   try {
-    const categories = await Course.distinct('category', { isActive: true });
+    const categories = await Course.distinct('category', { 
+      isActive: true,
+      musicianId: req.user.musicianId 
+    });
     
     res.status(200).json({
       success: true,

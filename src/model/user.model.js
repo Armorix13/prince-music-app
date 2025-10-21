@@ -74,6 +74,11 @@ const userSchema = new mongoose.Schema(
     },
     deviceToken:{
       type: String,
+    },
+    musicianId: {
+      type: Number,
+      required: true,
+      ref: 'Musician'
     }
   },
   {

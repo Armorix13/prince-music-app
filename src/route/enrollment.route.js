@@ -9,7 +9,7 @@ import {
   cleanupExpiredEnrollments
 } from '../controller/enrollment.controller.js';
 import { validateBody, validateParams } from '../middlewares/validation.js';
-import { authenticate } from '../middlewares/auth.js';
+import { authenticate, authenticateMusician } from '../middlewares/auth.js';
 import { enrollmentValidation } from '../validation/enrollment.validation.js';
 
 const router = express.Router();

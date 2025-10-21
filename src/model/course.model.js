@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const courseSchema = new mongoose.Schema(
   {
+    musicianId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: 'Musician'
+    },
     title: {
       type: String,
       required: true,
@@ -120,6 +125,7 @@ const courseSchema = new mongoose.Schema(
 );
 
 // Indexes for better performance
+courseSchema.index({ musicianId: 1 });
 courseSchema.index({ title: 1 });
 courseSchema.index({ description: 1 });
 courseSchema.index({ category: 1 });
@@ -160,10 +166,16 @@ courseSchema.statics.getCoursesWithPagination = async function(options = {}) {
     minPrice = null,
     maxPrice = null,
     tags = null,
-    isActive = null
+    isActive = null,
+    musicianId = null
   } = options;
 
   const query = {};
+
+  // Filter by musicianId if provided
+  if (musicianId !== null) {
+    query.musicianId = musicianId;
+  }
 
   // Filter by active status (default to true if not specified)
   if (isActive !== null) {

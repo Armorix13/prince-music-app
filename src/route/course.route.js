@@ -8,7 +8,7 @@ import {
   getCourseCategories
 } from '../controller/course.controller.js';
 import { validateBody, validateQuery, validateParams } from '../middlewares/validation.js';
-import { authenticate } from '../middlewares/auth.js';
+import { authenticate, authenticateMusician } from '../middlewares/auth.js';
 import { courseValidation } from '../validation/course.validation.js';
 
 const router = express.Router();
@@ -18,8 +18,8 @@ router.get('/', validateQuery(courseValidation.courseQuery), getAllCourses);
 router.get('/categories', getCourseCategories);
 router.get('/:courseId', validateParams(courseValidation.courseId), getCourseById);
 
-// Protected routes (authentication required)
-// router.use(authenticate);
+// Protected routes (musician-scoped authentication required)
+router.use(authenticateMusician);
 
 // Course management routes
 router.post('/', validateBody(courseValidation.createCourse), addCourse);

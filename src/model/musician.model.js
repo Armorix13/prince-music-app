@@ -10,8 +10,12 @@ const socialMediaSchema = new mongoose.Schema({
 });
 
 
-const princeSchema = new mongoose.Schema(
+const musicianSchema = new mongoose.Schema(
   {
+    musicianId: {
+      type: Number,
+      unique: true
+    },
     coverPhoto: {
       type: String,
     },
@@ -45,4 +49,13 @@ const princeSchema = new mongoose.Schema(
   }
 );
 
-export const Prince = mongoose.model("Prince", princeSchema);
+// Auto-increment musicianId
+musicianSchema.pre('save', async function(next) {
+  if (this.isNew && !this.musicianId) {
+    const lastMusician = await Musician.findOne({}, {}, { sort: { musicianId: -1 } });
+    this.musicianId = lastMusician ? lastMusician.musicianId + 1 : 1;
+  }
+  next();
+});
+
+export const Musician = mongoose.model("Musician", musicianSchema);

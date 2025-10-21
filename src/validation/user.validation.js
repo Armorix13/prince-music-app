@@ -118,6 +118,17 @@ export const userSignupSchema = Joi.object({
     .optional()
     .messages({
       'string.empty': 'Theme cannot be empty'
+    }),
+  
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
     })
 });
 export const userLoginSchema = Joi.object({
@@ -153,6 +164,17 @@ export const userLoginSchema = Joi.object({
     .messages({
       'string.empty': 'Device token is required',
       'any.required': 'Device token is required'
+    }),
+  
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
     })
 });
 

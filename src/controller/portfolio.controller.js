@@ -1,11 +1,12 @@
-import { Prince } from '../model/prince.model.js';
+import { Musician } from '../model/musician.model.js';
 import { Section } from '../model/section.model.js';
 import { CustomError } from '../utils/customError.js';
 
-// Create or Update Prince Portfolio
+// Create or Update Musician Portfolio
 export const createOrUpdatePortfolio = async (req, res, next) => {
   try {
     const {
+      musicianId,
       coverPhoto,
       profilePhoto,
       name,
@@ -16,13 +17,13 @@ export const createOrUpdatePortfolio = async (req, res, next) => {
       socialMedia
     } = req.body;
 
-    // Check if Prince already exists
-    let prince = await Prince.findOne({ mail });
+    // Check if Musician already exists by musicianId
+    let musician = await Musician.findOne({ musicianId });
     
-    if (prince) {
-      // Update existing Prince
-      prince = await Prince.findByIdAndUpdate(
-        prince._id,
+    if (musician) {
+      // Update existing Musician
+      musician = await Musician.findByIdAndUpdate(
+        musician._id,
         {
           coverPhoto,
           profilePhoto,
@@ -36,8 +37,9 @@ export const createOrUpdatePortfolio = async (req, res, next) => {
         { new: true, runValidators: true }
       );
     } else {
-      // Create new Prince
-      prince = await Prince.create({
+      // Create new Musician
+      musician = await Musician.create({
+        musicianId,
         coverPhoto,
         profilePhoto,
         name,
@@ -51,36 +53,36 @@ export const createOrUpdatePortfolio = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: prince.isNew ? 'Portfolio created successfully' : 'Portfolio updated successfully',
-      data: prince
+      message: musician.isNew ? 'Portfolio created successfully' : 'Portfolio updated successfully',
+      data: musician
     });
   } catch (error) {
     next(new CustomError(error.message, 400));
   }
 };
 
-// Add Content to Section (Single Prince)
+// Add Content to Section
 export const addContentToSection = async (req, res, next) => {
   try {
-    const { sectionTitle, content } = req.body;
+    const { musicianId, sectionTitle, content } = req.body;
 
-    // Find the single Prince
-    const prince = await Prince.findOne({ isActive: true });
-    if (!prince) {
-      return next(new CustomError('Prince not found', 404));
+    // Find the musician
+    const musician = await Musician.findOne({ musicianId, isActive: true });
+    if (!musician) {
+      return next(new CustomError('Musician not found', 404));
     }
 
     // Find or create section
     let section = await Section.findOne({ 
       title: sectionTitle, 
-      princeId: prince._id 
+      musicianId: musician._id 
     });
 
     if (!section) {
       // Create new section
       section = await Section.create({
         title: sectionTitle,
-        princeId: prince._id,
+        musicianId: musician._id,
         content: [content]
       });
     } else {
@@ -99,31 +101,34 @@ export const addContentToSection = async (req, res, next) => {
   }
 };
 
-// Get Complete Portfolio (Single Prince)
+// Get Complete Portfolio by Musician ID
 export const getPortfolio = async (req, res, next) => {
   try {
-    // Find the single Prince
-    const prince = await Prince.findOne({ isActive: true });
-    if (!prince) {
-      return next(new CustomError('Prince not found', 404));
+    const { musicianId } = req.params;
+
+    // Find the musician
+    const musician = await Musician.findOne({ musicianId, isActive: true });
+    if (!musician) {
+      return next(new CustomError('Musician not found', 404));
     }
 
-    // Find all sections for this Prince
+    // Find all sections for this musician
     const sections = await Section.find({ 
-      princeId: prince._id,
+      musicianId: musician._id,
       isActive: true 
     }).sort({ order: 1 });
 
     // Format response
     const portfolioData = {
-      coverPhoto: prince.coverPhoto,
-      profilePhoto: prince.profilePhoto,
-      name: prince.name,
-      description: prince.description,
-      mail: prince.mail,
-      contact: prince.contact,
-      location: prince.location,
-      socialMedia: prince.socialMedia,
+      musicianId: musician.musicianId,
+      coverPhoto: musician.coverPhoto,
+      profilePhoto: musician.profilePhoto,
+      name: musician.name,
+      description: musician.description,
+      mail: musician.mail,
+      contact: musician.contact,
+      location: musician.location,
+      socialMedia: musician.socialMedia,
       sections: sections.map(section => ({
         title: section.title,
         content: section.content
@@ -145,28 +150,29 @@ export const getPortfolioByEmail = async (req, res, next) => {
   try {
     const { email } = req.params;
 
-    // Find Prince by email
-    const prince = await Prince.findOne({ mail: email });
-    if (!prince) {
-      return next(new CustomError('Prince not found', 404));
+    // Find Musician by email
+    const musician = await Musician.findOne({ mail: email });
+    if (!musician) {
+      return next(new CustomError('Musician not found', 404));
     }
 
-    // Find all sections for this Prince
+    // Find all sections for this musician
     const sections = await Section.find({ 
-      princeId: prince._id,
+      musicianId: musician._id,
       isActive: true 
     }).sort({ order: 1 });
 
     // Format response
     const portfolioData = {
-      coverPhoto: prince.coverPhoto,
-      profilePhoto: prince.profilePhoto,
-      name: prince.name,
-      description: prince.description,
-      mail: prince.mail,
-      contact: prince.contact,
-      location: prince.location,
-      socialMedia: prince.socialMedia,
+      musicianId: musician.musicianId,
+      coverPhoto: musician.coverPhoto,
+      profilePhoto: musician.profilePhoto,
+      name: musician.name,
+      description: musician.description,
+      mail: musician.mail,
+      contact: musician.contact,
+      location: musician.location,
+      socialMedia: musician.socialMedia,
       sections: sections.map(section => ({
         title: section.title,
         content: section.content
@@ -186,13 +192,19 @@ export const getPortfolioByEmail = async (req, res, next) => {
 // Update Section Content
 export const updateSectionContent = async (req, res, next) => {
   try {
-    const { princeId, sectionTitle } = req.params;
+    const { musicianId, sectionTitle } = req.params;
     const { content } = req.body;
+
+    // Find musician first
+    const musician = await Musician.findOne({ musicianId });
+    if (!musician) {
+      return next(new CustomError('Musician not found', 404));
+    }
 
     // Find section
     const section = await Section.findOne({ 
       title: sectionTitle, 
-      princeId: princeId 
+      musicianId: musician._id 
     });
 
     if (!section) {
@@ -216,11 +228,17 @@ export const updateSectionContent = async (req, res, next) => {
 // Delete Section
 export const deleteSection = async (req, res, next) => {
   try {
-    const { princeId, sectionTitle } = req.params;
+    const { musicianId, sectionTitle } = req.params;
+
+    // Find musician first
+    const musician = await Musician.findOne({ musicianId });
+    if (!musician) {
+      return next(new CustomError('Musician not found', 404));
+    }
 
     const section = await Section.findOneAndDelete({ 
       title: sectionTitle, 
-      princeId: princeId 
+      musicianId: musician._id 
     });
 
     if (!section) {
@@ -236,13 +254,19 @@ export const deleteSection = async (req, res, next) => {
   }
 };
 
-// Get All Sections for Prince
-export const getPrinceSections = async (req, res, next) => {
+// Get All Sections for Musician
+export const getMusicianSections = async (req, res, next) => {
   try {
-    const { princeId } = req.params;
+    const { musicianId } = req.params;
+
+    // Find musician first
+    const musician = await Musician.findOne({ musicianId });
+    if (!musician) {
+      return next(new CustomError('Musician not found', 404));
+    }
 
     const sections = await Section.find({ 
-      princeId: princeId,
+      musicianId: musician._id,
       isActive: true 
     }).sort({ order: 1 });
 

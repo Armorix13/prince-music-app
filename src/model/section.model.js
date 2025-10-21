@@ -35,9 +35,9 @@ const sectionSchema = new mongoose.Schema(
     description: {
       type: String
     },
-    princeId: {
+    musicianId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Prince',
+      ref: 'Musician',
       required: true
     },
     content: [contentSchema],

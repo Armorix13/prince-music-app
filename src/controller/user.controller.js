@@ -36,27 +36,35 @@ export const signup = asyncHandler(async (req, res, next) => {
       profileImage,
       theme,
       deviceType,
-      deviceToken
+      deviceToken,
+      musicianId
     } = req.body;
 
-    // Check if user already exists by email
-    const existingUserByEmail = await User.findOne({ email: emailUtils.normalizeEmail(email) });
-    if (existingUserByEmail) {
+    // Check if user already exists by email and musicianId combination
+    const existingUserByEmailAndMusician = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
+    if (existingUserByEmailAndMusician) {
       // If user exists but email is not verified, allow re-registration
-      if (!existingUserByEmail.isEmailVerified) {
+      if (!existingUserByEmailAndMusician.isEmailVerified) {
         // Delete the unverified user to allow re-registration
-        await User.findByIdAndDelete(existingUserByEmail._id);
-        console.log(`Deleted unverified user with email: ${email}`);
+        await User.findByIdAndDelete(existingUserByEmailAndMusician._id);
+        console.log(`Deleted unverified user with email: ${email} and musicianId: ${musicianId}`);
       } else {
-        throw new ConflictError('User with this email already exists and is verified');
+        throw new ConflictError('User with this email already exists for this musician and is verified');
       }
     }
 
-    // Check if user already exists by phone (if provided)
+    // Check if user already exists by phone and musicianId combination (if provided)
     if (phoneNumber && countryCode) {
-      const existingUserByPhone = await User.findOne({ phoneNumber, countryCode });
-      if (existingUserByPhone) {
-        throw new ConflictError('User with this phone number already exists');
+      const existingUserByPhoneAndMusician = await User.findOne({ 
+        phoneNumber, 
+        countryCode,
+        musicianId: musicianId
+      });
+      if (existingUserByPhoneAndMusician) {
+        throw new ConflictError('User with this phone number already exists for this musician');
       }
     }
 
@@ -107,6 +115,7 @@ export const signup = asyncHandler(async (req, res, next) => {
       theme,
       deviceType,
       deviceToken,
+      musicianId,
       otp,
       otpCreatedAt,
       otpExpiresAt,
@@ -155,6 +164,7 @@ export const signup = asyncHandler(async (req, res, next) => {
         profileImage: user.profileImage,
         theme: user.theme,
         deviceType: user.deviceType,
+        musicianId: user.musicianId,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,
@@ -174,12 +184,15 @@ export const signup = asyncHandler(async (req, res, next) => {
 // User login controller
 export const login = asyncHandler(async (req, res, next) => {
   try {
-    const { email, password, deviceType, deviceToken } = req.body;
+    const { email, password, deviceType, deviceToken, musicianId } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+    // Find user by email and musicianId combination
+    const user = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
     if (!user) {
-      throw new UnauthorizedError('Invalid email or password');
+      throw new UnauthorizedError('Invalid email, password, or musician');
     }
 
     // Check if email is verified
@@ -222,6 +235,7 @@ export const login = asyncHandler(async (req, res, next) => {
         profileImage: user.profileImage,
         theme: user.theme,
         deviceType: user.deviceType,
+        musicianId: user.musicianId,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,

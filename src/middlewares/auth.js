@@ -242,6 +242,61 @@ export const trackDevice = (req, res, next) => {
   next();
 };
 
+// Musician-scoped access middleware
+export const requireMusicianAccess = (req, res, next) => {
+  if (!req.user) {
+    throw new UnauthorizedError('Authentication required.');
+  }
+  
+  // Get musicianId from params, body, or query
+  const musicianId = req.params.musicianId || req.body.musicianId || req.query.musicianId;
+  
+  if (!musicianId) {
+    throw new ForbiddenError('Musician ID is required to access this resource.');
+  }
+  
+  // Check if user's musicianId matches the requested musicianId
+  if (req.user.musicianId !== parseInt(musicianId)) {
+    throw new ForbiddenError('Access denied. You can only access content for your assigned musician.');
+  }
+  
+  // Add musicianId to request for use in controllers
+  req.musicianId = parseInt(musicianId);
+  next();
+};
+
+// Optional musician access middleware (doesn't throw error if musicianId doesn't match)
+export const optionalMusicianAccess = (req, res, next) => {
+  if (!req.user) {
+    return next();
+  }
+  
+  const musicianId = req.params.musicianId || req.body.musicianId || req.query.musicianId;
+  
+  if (musicianId && req.user.musicianId === parseInt(musicianId)) {
+    req.musicianId = parseInt(musicianId);
+  }
+  
+  next();
+};
+
+// Musician-scoped authentication middleware (combines auth + musician access)
+export const authenticateMusician = async (req, res, next) => {
+  try {
+    // First authenticate the user
+    await authenticate(req, res, (error) => {
+      if (error) {
+        return next(error);
+      }
+      
+      // Then check musician access
+      requireMusicianAccess(req, res, next);
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Request logging middleware
 export const requestLogger = (req, res, next) => {
   const start = Date.now();
@@ -256,6 +311,7 @@ export const requestLogger = (req, res, next) => {
       ip: req.ip,
       userAgent: req.headers['user-agent'],
       userId: req.user?.id || 'anonymous',
+      musicianId: req.user?.musicianId || 'none',
       timestamp: new Date().toISOString()
     };
     

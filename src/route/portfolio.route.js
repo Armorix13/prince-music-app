@@ -7,15 +7,16 @@ import {
   getPortfolioByEmail,
   updateSectionContent,
   deleteSection,
-  getPrinceSections
+  getMusicianSections
 } from '../controller/portfolio.controller.js';
 import { validateBody } from '../middlewares/validation.js';
-import { authenticate } from '../middlewares/auth.js';
+import { authenticate, authenticateMusician, requireMusicianAccess } from '../middlewares/auth.js';
 
 const router = express.Router();
 
 // Validation schemas
 const portfolioSchema = Joi.object({
+  musicianId: Joi.number().integer().positive().required(),
   coverPhoto: Joi.string().uri().required(),
   profilePhoto: Joi.string().uri().required(),
   name: Joi.string().required(),
@@ -32,6 +33,7 @@ const portfolioSchema = Joi.object({
 });
 
 const addContentSchema = Joi.object({
+  musicianId: Joi.number().integer().positive().required(),
   sectionTitle: Joi.string().required(),
   content: Joi.object({
     title: Joi.string().required(),
@@ -55,17 +57,17 @@ const updateContentSchema = Joi.object({
 });
 
 // Public routes (no authentication required)
-router.post('/add-update-portfolio', validateBody(portfolioSchema), createOrUpdatePortfolio);
 router.get('/portfolio/email/:email', getPortfolioByEmail);
 
-// Protected routes (authentication required)
-// router.use(authenticate);
+// Protected routes (musician-scoped authentication required)
+router.use(authenticateMusician);
 
 // Portfolio management routes
-router.get('/', getPortfolio);
+router.post('/add-update-portfolio', validateBody(portfolioSchema), createOrUpdatePortfolio);
+router.get('/:musicianId', getPortfolio);
 router.post('/section/content', validateBody(addContentSchema), addContentToSection);
-router.put('/:princeId/section/:sectionTitle/content', validateBody(updateContentSchema), updateSectionContent);
-router.delete('/:princeId/section/:sectionTitle', deleteSection);
-router.get('/:princeId/sections', getPrinceSections);
+router.put('/:musicianId/section/:sectionTitle/content', validateBody(updateContentSchema), updateSectionContent);
+router.delete('/:musicianId/section/:sectionTitle', deleteSection);
+router.get('/:musicianId/sections', getMusicianSections);
 
 export default router;
