@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
+import path from "path";
+import { fileURLToPath } from "url";
 import { errorHandler, notFound } from "./src/middlewares/errorHandler.js";
 import { 
   securityHeaders, 
@@ -10,6 +12,10 @@ import {
 } from "./src/middlewares/auth.js";
 import routes from "./src/route/index.js";
 import { connectDB } from "./src/config/db.js";
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +37,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging
 app.use(requestLogger);
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'src/uploads')));
 
 // Health check endpoint
 app.get("/", (req, res) => {

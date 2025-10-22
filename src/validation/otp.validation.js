@@ -13,6 +13,17 @@ export const otpRequestSchema = Joi.object({
       'any.required': 'Email is required'
     }),
   
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
+    }),
+  
   otpFor: Joi.string()
     .valid('emailVerification', 'resetPassword', 'updateEmail', 'updatePhoneNumber')
     .required()
@@ -58,6 +69,17 @@ export const otpVerificationSchema = Joi.object({
       'any.required': 'Email is required'
     }),
   
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
+    }),
+  
   otp: Joi.string()
     .length(6)
     .pattern(/^\d{6}$/)
@@ -91,6 +113,17 @@ export const accountVerificationSchema = Joi.object({
       'any.required': 'Email is required'
     }),
   
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
+    }),
+  
   otp: Joi.string()
     .length(6)
     .pattern(/^\d{6}$/)
@@ -114,6 +147,17 @@ export const forgotPasswordSchema = Joi.object({
       'string.empty': 'Email is required',
       'string.email': 'Please provide a valid email address',
       'any.required': 'Email is required'
+    }),
+  
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
     })
 });
 
@@ -128,6 +172,17 @@ export const passwordResetRequestSchema = Joi.object({
       'string.empty': 'Email is required',
       'string.email': 'Please provide a valid email address',
       'any.required': 'Email is required'
+    }),
+  
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
     })
 });
 
@@ -142,6 +197,17 @@ export const passwordResetVerificationSchema = Joi.object({
       'string.empty': 'Email is required',
       'string.email': 'Please provide a valid email address',
       'any.required': 'Email is required'
+    }),
+  
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
     }),
   
   otp: Joi.string()
@@ -169,6 +235,17 @@ export const passwordResetSchema = Joi.object({
       'any.required': 'Email is required'
     }),
   
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
+    }),
+  
   newPassword: Joi.string()
     .min(8)
     .required()
@@ -190,6 +267,17 @@ export const emailUpdateVerificationSchema = Joi.object({
       'string.empty': 'Email is required',
       'string.email': 'Please provide a valid email address',
       'any.required': 'Email is required'
+    }),
+  
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
     }),
   
   otp: Joi.string()
@@ -226,6 +314,17 @@ export const phoneUpdateVerificationSchema = Joi.object({
       'string.empty': 'Email is required',
       'string.email': 'Please provide a valid email address',
       'any.required': 'Email is required'
+    }),
+  
+  musicianId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'Musician ID must be a number',
+      'number.integer': 'Musician ID must be an integer',
+      'number.positive': 'Musician ID must be a positive number',
+      'any.required': 'Musician ID is required'
     }),
   
   otp: Joi.string()

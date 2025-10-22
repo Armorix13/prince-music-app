@@ -3,6 +3,7 @@ import userRoutes from './user.route.js';
 import portfolioRoutes from './portfolio.route.js';
 import courseRoutes from './course.route.js';
 import enrollmentRoutes from './enrollment.route.js';
+import uploadRoutes from './upload.route.js';
 
 const router = express.Router();
 
@@ -13,6 +14,7 @@ router.use(`${API_VERSION}/portfolio`, portfolioRoutes);
 router.use(`${API_VERSION}/users`, userRoutes);
 router.use(`${API_VERSION}/courses`, courseRoutes);
 router.use(`${API_VERSION}/enrollments`, enrollmentRoutes);
+router.use(`${API_VERSION}/upload`, uploadRoutes);
 
 router.get('/health', (req, res) => {
   res.status(200).json({

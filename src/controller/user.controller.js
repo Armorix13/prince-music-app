@@ -17,6 +17,7 @@ import {
   responseUtils 
 } from '../utils/helpers.js';
 import { User } from '../model/user.model.js';
+import { Musician } from '../model/musician.model.js';
 import { tokenBlacklist } from '../services/tokenBlacklist.js';
 import emailService from '../services/emailService.js';
 
@@ -39,6 +40,14 @@ export const signup = asyncHandler(async (req, res, next) => {
       deviceToken,
       musicianId
     } = req.body;
+
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
 
     // Check if user already exists by email and musicianId combination
     const existingUserByEmailAndMusician = await User.findOne({ 
@@ -186,6 +195,14 @@ export const login = asyncHandler(async (req, res, next) => {
   try {
     const { email, password, deviceType, deviceToken, musicianId } = req.body;
 
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
     // Find user by email and musicianId combination
     const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
@@ -263,16 +280,28 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
       lastName, 
       profileImage,
       deviceType,
-      deviceToken
+      deviceToken,
+      musicianId
     } = req.body;
 
-    // Check if user exists with this social ID
-    let user = await User.findOne({ socialId, socialType });
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
+    // Check if user exists with this social ID and musicianId
+    let user = await User.findOne({ socialId, socialType, musicianId });
 
     if (!user) {
-      // Check if user exists with email
+      // Check if user exists with email and musicianId
       if (email) {
-        user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+        user = await User.findOne({ 
+          email: emailUtils.normalizeEmail(email),
+          musicianId: musicianId 
+        });
         
         if (user) {
           // Update existing user with social info
@@ -293,6 +322,7 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
           profileImage,
           deviceType,
           deviceToken,
+          musicianId,
           isEmailVerified: !!email, // If email provided, mark as verified
           isOtpVerified: true, // Social login doesn't need OTP
           loginAt: new Date()
@@ -325,6 +355,7 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
         profileImage: user.profileImage,
         theme: user.theme,
         deviceType: user.deviceType,
+        musicianId: user.musicianId,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,
@@ -344,10 +375,21 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
 // Request OTP controller
 export const requestOTP = asyncHandler(async (req, res, next) => {
   try {
-    const { email, otpFor } = req.body;
+    const { email, otpFor, musicianId } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
+    // Find user by email and musicianId combination
+    const user = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
     if (!user) {
       throw new NotFoundError('User not found');
     }
@@ -416,10 +458,21 @@ export const requestOTP = asyncHandler(async (req, res, next) => {
 // Verify OTP controller
 export const verifyOTP = asyncHandler(async (req, res, next) => {
   try {
-    const { email, otp, otpFor } = req.body;
+    const { email, otp, otpFor, musicianId } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
+    // Find user by email and musicianId combination
+    const user = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
     if (!user) {
       throw new NotFoundError('User not found');
     }
@@ -491,6 +544,7 @@ export const getUserProfile = asyncHandler(async (req, res, next) => {
         profileImage: user.profileImage,
         theme: user.theme,
         deviceType: user.deviceType,
+        musicianId: user.musicianId,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,
@@ -533,9 +587,12 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
         throw new ValidationError(emailValidation.error);
       }
 
-      const existingUser = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+      const existingUser = await User.findOne({ 
+        email: emailUtils.normalizeEmail(email),
+        musicianId: user.musicianId
+      });
       if (existingUser && existingUser._id.toString() !== userId) {
-        throw new ConflictError('Email is already in use by another account');
+        throw new ConflictError('Email is already in use by another account for this musician');
       }
 
       // If email is changed, mark as unverified and generate OTP
@@ -558,9 +615,13 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
         throw new ValidationError(phoneValidation.error);
       }
 
-      const existingUser = await User.findOne({ phoneNumber, countryCode });
+      const existingUser = await User.findOne({ 
+        phoneNumber, 
+        countryCode,
+        musicianId: user.musicianId
+      });
       if (existingUser && existingUser._id.toString() !== userId) {
-        throw new ConflictError('Phone number is already in use by another account');
+        throw new ConflictError('Phone number is already in use by another account for this musician');
       }
 
       user.phoneNumber = phoneNumber;
@@ -705,10 +766,21 @@ export const refreshToken = asyncHandler(async (req, res, next) => {
 // Verify account OTP (for new signups)
 export const verifyAccountOTP = asyncHandler(async (req, res, next) => {
   try {
-    const { email, otp } = req.body;
+    const { email, otp, musicianId } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
+    // Find user by email and musicianId combination
+    const user = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
     if (!user) {
       throw new NotFoundError('User not found');
     }
@@ -757,10 +829,21 @@ export const verifyAccountOTP = asyncHandler(async (req, res, next) => {
 // Verify password reset OTP
 export const verifyPasswordResetOTP = asyncHandler(async (req, res, next) => {
   try {
-    const { email, otp } = req.body;
+    const { email, otp, musicianId } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
+    // Find user by email and musicianId combination
+    const user = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
     if (!user) {
       throw new NotFoundError('User not found');
     }
@@ -797,10 +880,21 @@ export const verifyPasswordResetOTP = asyncHandler(async (req, res, next) => {
 // Reset password after OTP verification
 export const resetPassword = asyncHandler(async (req, res, next) => {
   try {
-    const { email, newPassword } = req.body;
+    const { email, newPassword, musicianId } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
+    // Find user by email and musicianId combination
+    const user = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
     if (!user) {
       throw new NotFoundError('User not found');
     }
@@ -826,10 +920,21 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
 // Verify email update OTP
 export const verifyEmailUpdateOTP = asyncHandler(async (req, res, next) => {
   try {
-    const { email, otp, newEmail } = req.body;
+    const { email, otp, newEmail, musicianId } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
+    // Find user by email and musicianId combination
+    const user = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
     if (!user) {
       throw new NotFoundError('User not found');
     }
@@ -855,10 +960,13 @@ export const verifyEmailUpdateOTP = asyncHandler(async (req, res, next) => {
       throw new ValidationError(emailValidation.error);
     }
 
-    // Check if new email already exists
-    const existingUser = await User.findOne({ email: emailUtils.normalizeEmail(newEmail) });
+    // Check if new email already exists for this musician
+    const existingUser = await User.findOne({ 
+      email: emailUtils.normalizeEmail(newEmail),
+      musicianId: user.musicianId
+    });
     if (existingUser && existingUser._id.toString() !== user._id.toString()) {
-      throw new ConflictError('Email is already in use by another account');
+      throw new ConflictError('Email is already in use by another account for this musician');
     }
 
     // Update email
@@ -891,10 +999,21 @@ export const verifyEmailUpdateOTP = asyncHandler(async (req, res, next) => {
 // Verify phone update OTP
 export const verifyPhoneUpdateOTP = asyncHandler(async (req, res, next) => {
   try {
-    const { email, otp, newPhoneNumber, newCountryCode } = req.body;
+    const { email, otp, newPhoneNumber, newCountryCode, musicianId } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
+    // Find user by email and musicianId combination
+    const user = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
     if (!user) {
       throw new NotFoundError('User not found');
     }
@@ -920,10 +1039,14 @@ export const verifyPhoneUpdateOTP = asyncHandler(async (req, res, next) => {
       throw new ValidationError(phoneValidation.error);
     }
 
-    // Check if new phone already exists
-    const existingUser = await User.findOne({ phoneNumber: newPhoneNumber, countryCode: newCountryCode });
+    // Check if new phone already exists for this musician
+    const existingUser = await User.findOne({ 
+      phoneNumber: newPhoneNumber, 
+      countryCode: newCountryCode,
+      musicianId: user.musicianId
+    });
     if (existingUser && existingUser._id.toString() !== user._id.toString()) {
-      throw new ConflictError('Phone number is already in use by another account');
+      throw new ConflictError('Phone number is already in use by another account for this musician');
     }
 
     // Update phone
@@ -956,10 +1079,21 @@ export const verifyPhoneUpdateOTP = asyncHandler(async (req, res, next) => {
 // Request password reset OTP
 export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email, musicianId } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: emailUtils.normalizeEmail(email) });
+    // Check if musicianId exists in the database
+    if (musicianId) {
+      const musician = await Musician.findOne({ musicianId: musicianId });
+      if (!musician) {
+        throw new NotFoundError('Musician not found with the provided musicianId');
+      }
+    }
+
+    // Find user by email and musicianId combination
+    const user = await User.findOne({ 
+      email: emailUtils.normalizeEmail(email),
+      musicianId: musicianId
+    });
     if (!user) {
       throw new NotFoundError('User not found');
     }

@@ -16,7 +16,7 @@ const router = express.Router();
 
 // Validation schemas
 const portfolioSchema = Joi.object({
-  musicianId: Joi.number().integer().positive().required(),
+  musicianId: Joi.number().integer().positive().optional(),
   coverPhoto: Joi.string().uri().required(),
   profilePhoto: Joi.string().uri().required(),
   name: Joi.string().required(),
@@ -60,10 +60,12 @@ const updateContentSchema = Joi.object({
 router.get('/portfolio/email/:email', getPortfolioByEmail);
 
 // Protected routes (musician-scoped authentication required)
-router.use(authenticateMusician);
 
 // Portfolio management routes
 router.post('/add-update-portfolio', validateBody(portfolioSchema), createOrUpdatePortfolio);
+
+router.use(authenticateMusician);
+
 router.get('/:musicianId', getPortfolio);
 router.post('/section/content', validateBody(addContentSchema), addContentToSection);
 router.put('/:musicianId/section/:sectionTitle/content', validateBody(updateContentSchema), updateSectionContent);
