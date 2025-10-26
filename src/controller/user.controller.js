@@ -146,15 +146,15 @@ export const signup = asyncHandler(async (req, res, next) => {
 
     // Send OTP email
     try {
-      const emailResult = await emailService.sendOTP({
-        email: user.email,
-        firstName: user.firstName,
-        otp: otp
-      }, 'emailVerification');
+      // const emailResult = await emailService.sendOTP({
+      //   email: user.email,
+      //   firstName: user.firstName,
+      //   otp: otp
+      // }, 'emailVerification');
       
-      if (!emailResult.success) {
-        console.log('⚠️ Email service not configured. OTP not sent via email.');
-      }
+      // if (!emailResult.success) {
+      //   console.log('⚠️ Email service not configured. OTP not sent via email.');
+      // }
     } catch (emailError) {
       console.error('Failed to send OTP email:', emailError);
       // Don't throw error, just log it - user can still request OTP again
