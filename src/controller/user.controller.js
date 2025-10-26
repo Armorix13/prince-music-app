@@ -177,9 +177,10 @@ export const signup = asyncHandler(async (req, res, next) => {
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
       },
       otp: {
+        otp:otp,
         expiresAt: otpExpiresAt,
         expiresIn: '10 minutes'
       }
