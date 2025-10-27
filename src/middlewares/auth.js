@@ -96,6 +96,45 @@ export const authorize = (...roles) => {
   };
 };
 
+// Admin only middleware
+export const requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    throw new UnauthorizedError('Authentication required.');
+  }
+
+  if (req.user.role !== 'admin') {
+    throw new ForbiddenError('Access denied. Admin role required.');
+  }
+
+  next();
+};
+
+// Musician only middleware
+export const requireMusician = (req, res, next) => {
+  if (!req.user) {
+    throw new UnauthorizedError('Authentication required.');
+  }
+
+  if (req.user.role !== 'musician' && req.user.role !== 'admin') {
+    throw new ForbiddenError('Access denied. Musician or Admin role required.');
+  }
+
+  next();
+};
+
+// Admin or Musician middleware
+export const requireAdminOrMusician = (req, res, next) => {
+  if (!req.user) {
+    throw new UnauthorizedError('Authentication required.');
+  }
+
+  if (req.user.role !== 'admin' && req.user.role !== 'musician') {
+    throw new ForbiddenError('Access denied. Admin or Musician role required.');
+  }
+
+  next();
+};
+
 // Email verification middleware
 export const requireEmailVerification = (req, res, next) => {
   if (!req.user) {

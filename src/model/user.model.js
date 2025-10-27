@@ -79,6 +79,11 @@ const userSchema = new mongoose.Schema(
       type: Number,
       required: true,
       ref: 'Musician'
+    },
+    role: {
+      type: String,
+      enum: ["user", "musician", "admin"],
+      default: "user"
     }
   },
   {

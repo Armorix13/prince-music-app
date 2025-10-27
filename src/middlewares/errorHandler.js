@@ -8,6 +8,15 @@ export const errorHandler = (err, req, res, next) => {
   // Log error for debugging
   console.error('Error:', err);
 
+  // If error is already a CustomError instance, use its statusCode
+  if (err instanceof CustomError) {
+    return res.status(err.statusCode).json({
+      success: false,
+      error: err.message || 'Server Error',
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+  }
+
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
     const message = 'Resource not found';

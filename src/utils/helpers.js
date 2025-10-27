@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
+import { UnauthorizedError } from './customError.js';
 
 // Password utilities
 export const passwordUtils = {
@@ -111,7 +112,7 @@ export const jwtUtils = {
   verifyAccessToken(token) {
     try {
       if (!token || typeof token !== 'string') {
-        throw new Error('Token must be a non-empty string');
+        throw new UnauthorizedError('Token must be a non-empty string');
       }
       
       const secret = process.env.JWT_SECRET;
@@ -122,11 +123,13 @@ export const jwtUtils = {
       return jwt.verify(token, secret);
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        throw new Error('Access token has expired');
+        throw new UnauthorizedError('Access token has expired');
       } else if (error.name === 'JsonWebTokenError') {
-        throw new Error('Invalid access token');
+        throw new UnauthorizedError('Invalid access token');
+      } else if (error instanceof UnauthorizedError) {
+        throw error;
       } else {
-        throw new Error(`Token verification failed: ${error.message}`);
+        throw new UnauthorizedError(`Token verification failed: ${error.message}`);
       }
     }
   },
@@ -135,7 +138,7 @@ export const jwtUtils = {
   verifyRefreshToken(token) {
     try {
       if (!token || typeof token !== 'string') {
-        throw new Error('Token must be a non-empty string');
+        throw new UnauthorizedError('Token must be a non-empty string');
       }
       
       const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
@@ -146,11 +149,13 @@ export const jwtUtils = {
       return jwt.verify(token, secret);
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        throw new Error('Refresh token has expired');
+        throw new UnauthorizedError('Refresh token has expired');
       } else if (error.name === 'JsonWebTokenError') {
-        throw new Error('Invalid refresh token');
+        throw new UnauthorizedError('Invalid refresh token');
+      } else if (error instanceof UnauthorizedError) {
+        throw error;
       } else {
-        throw new Error(`Refresh token verification failed: ${error.message}`);
+        throw new UnauthorizedError(`Refresh token verification failed: ${error.message}`);
       }
     }
   },
@@ -247,9 +252,6 @@ export const dateUtils = {
     }
     
     const age = now.getFullYear() - date.getFullYear();
-    if (age < 13) {
-      return { isValid: false, error: 'Must be at least 13 years old' };
-    }
     
     if (age > 120) {
       return { isValid: false, error: 'Invalid age' };

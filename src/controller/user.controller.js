@@ -174,6 +174,7 @@ export const signup = asyncHandler(async (req, res, next) => {
         theme: user.theme,
         deviceType: user.deviceType,
         musicianId: user.musicianId,
+        role: user.role,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,
@@ -237,8 +238,8 @@ export const login = asyncHandler(async (req, res, next) => {
     await user.save();
 
     // Generate tokens
-    const accessToken = jwtUtils.generateAccessToken({ id: user._id });
-    const refreshToken = jwtUtils.generateRefreshToken({ id: user._id });
+    const accessToken = jwtUtils.generateAccessToken({ id: user._id, role: user.role });
+    const refreshToken = jwtUtils.generateRefreshToken({ id: user._id, role: user.role });
 
     responseUtils.success(res, 'Login successful', {
       user: {
@@ -254,6 +255,7 @@ export const login = asyncHandler(async (req, res, next) => {
         theme: user.theme,
         deviceType: user.deviceType,
         musicianId: user.musicianId,
+        role: user.role,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,
@@ -340,8 +342,8 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
     await user.save();
 
     // Generate tokens
-    const accessToken = jwtUtils.generateAccessToken({ id: user._id });
-    const refreshToken = jwtUtils.generateRefreshToken({ id: user._id });
+    const accessToken = jwtUtils.generateAccessToken({ id: user._id, role: user.role });
+    const refreshToken = jwtUtils.generateRefreshToken({ id: user._id, role: user.role });
 
     responseUtils.success(res, 'Social login successful', {
       user: {
@@ -357,6 +359,7 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
         theme: user.theme,
         deviceType: user.deviceType,
         musicianId: user.musicianId,
+        role: user.role,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,
@@ -546,6 +549,7 @@ export const getUserProfile = asyncHandler(async (req, res, next) => {
         theme: user.theme,
         deviceType: user.deviceType,
         musicianId: user.musicianId,
+        role: user.role,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,
@@ -661,6 +665,8 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
         profileImage: user.profileImage,
         theme: user.theme,
         deviceType: user.deviceType,
+        musicianId: user.musicianId,
+        role: user.role,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         updatedAt: user.updatedAt
@@ -749,8 +755,8 @@ export const refreshToken = asyncHandler(async (req, res, next) => {
     }
 
     // Generate new tokens
-    const newAccessToken = jwtUtils.generateAccessToken({ id: user._id });
-    const newRefreshToken = jwtUtils.generateRefreshToken({ id: user._id });
+    const newAccessToken = jwtUtils.generateAccessToken({ id: user._id, role: user.role });
+    const newRefreshToken = jwtUtils.generateRefreshToken({ id: user._id, role: user.role });
 
     responseUtils.success(res, 'Tokens refreshed successfully', {
       tokens: {
@@ -813,8 +819,8 @@ export const verifyAccountOTP = asyncHandler(async (req, res, next) => {
     await user.save();
 
     // Generate tokens
-    const accessToken = jwtUtils.generateAccessToken({ id: user._id });
-    const refreshToken = jwtUtils.generateRefreshToken({ id: user._id });
+    const accessToken = jwtUtils.generateAccessToken({ id: user._id, role: user.role });
+    const refreshToken = jwtUtils.generateRefreshToken({ id: user._id, role: user.role });
 
     responseUtils.success(res, 'Account verified successfully', {
       user: {
@@ -830,6 +836,7 @@ export const verifyAccountOTP = asyncHandler(async (req, res, next) => {
         theme: user.theme,
         deviceType: user.deviceType,
         musicianId: user.musicianId,
+        role: user.role,
         isEmailVerified: user.isEmailVerified,
         isOtpVerified: user.isOtpVerified,
         loginAt: user.loginAt,

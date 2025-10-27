@@ -16,6 +16,10 @@ const musicianSchema = new mongoose.Schema(
       type: Number,
       unique: true
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
     coverPhoto: {
       type: String,
     },
