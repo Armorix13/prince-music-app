@@ -1,6 +1,6 @@
 import express from 'express';
 import Joi from 'joi';
-import { 
+import {
   createOrUpdatePortfolio,
   addContentToSection,
   getPortfolio,
@@ -56,6 +56,8 @@ const updateContentSchema = Joi.object({
   ).required()
 });
 
+router.use(authenticateMusician);
+
 // Public routes (no authentication required)
 router.get('/portfolio/email/:email', getPortfolioByEmail);
 
@@ -64,7 +66,6 @@ router.get('/portfolio/email/:email', getPortfolioByEmail);
 // Portfolio management routes
 router.post('/add-update-portfolio', validateBody(portfolioSchema), createOrUpdatePortfolio);
 
-router.use(authenticateMusician);
 
 router.get('/:musicianId', getPortfolio);
 router.post('/section/content', validateBody(addContentSchema), addContentToSection);

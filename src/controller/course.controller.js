@@ -114,13 +114,31 @@ export const getAllCourses = async (req, res, next) => {
     };
     const freeCoursesResult = await Course.getCoursesWithPagination(freeCoursesOptions);
 
+    // Get user's enrolled courses if user is authenticated
+    let myCourses = [];
+    if (req.user && req.user.id) {
+      const { Enrollment } = await import('../model/enrollment.model.js');
+      const enrollments = await Enrollment.getUserEnrollments(req.user.id);
+      myCourses = enrollments.map(enrollment => ({
+        enrollmentId: enrollment._id,
+        enrolledAt: enrollment.enrolledAt,
+        expiresAt: enrollment.expiresAt,
+        daysRemaining: enrollment.daysRemaining,
+        isExpired: enrollment.isExpired,
+        enrollmentType: enrollment.enrollmentType,
+        progress: enrollment.progress,
+        course: enrollment.course
+      }));
+    }
+
     res.status(200).json({
       success: true,
       message: 'Courses retrieved successfully',
       data: {
         allCourses: allCoursesResult, // Contains pagination info
         paidCourses: paidCoursesResult.courses, // All paid courses without pagination
-        freeCourses: freeCoursesResult.courses // All free courses without pagination
+        freeCourses: freeCoursesResult.courses, // All free courses without pagination
+        myCourses: myCourses // User's enrolled courses (empty if not authenticated)
       }
     });
   } catch (error) {

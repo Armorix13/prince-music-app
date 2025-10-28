@@ -26,7 +26,7 @@ const courseSchema = new mongoose.Schema(
     },
     price: {
       type: Number,
-      required: function() {
+      required: function () {
         return this.courseType === 1; // Required only for paid courses
       },
       min: 0,
@@ -135,25 +135,25 @@ courseSchema.index({ isActive: 1 });
 courseSchema.index({ createdAt: -1 });
 
 // Virtual for course type name
-courseSchema.virtual('courseTypeName').get(function() {
+courseSchema.virtual('courseTypeName').get(function () {
   return this.courseType === 1 ? 'paid' : 'free';
 });
 
 // Method to get similar courses
-courseSchema.methods.getSimilarCourses = async function(limit = 5) {
+courseSchema.methods.getSimilarCourses = async function (limit = 5) {
   const Course = mongoose.model('Course');
-  
+
   return await Course.find({
     _id: { $ne: this._id },
     category: this.category,
     isActive: true
   })
-  .limit(limit)
-  .sort({ enrollmentCount: -1, rating: -1 });
+    .limit(limit)
+    .sort({ enrollmentCount: -1, rating: -1 });
 };
 
 // Static method to get courses with pagination and search - Unified filtering
-courseSchema.statics.getCoursesWithPagination = async function(options = {}) {
+courseSchema.statics.getCoursesWithPagination = async function (options = {}) {
   const {
     page = 1,
     limit = 10,

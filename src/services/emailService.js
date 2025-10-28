@@ -64,7 +64,8 @@ class EmailService {
         emailVerification: fs.readFileSync(path.join(templatesDir, 'email-verification.html'), 'utf8'),
         passwordReset: fs.readFileSync(path.join(templatesDir, 'password-reset.html'), 'utf8'),
         emailUpdate: fs.readFileSync(path.join(templatesDir, 'email-update.html'), 'utf8'),
-        phoneUpdate: fs.readFileSync(path.join(templatesDir, 'phone-update.html'), 'utf8')
+        phoneUpdate: fs.readFileSync(path.join(templatesDir, 'phone-update.html'), 'utf8'),
+        musicianCredentials: fs.readFileSync(path.join(templatesDir, 'musician-credentials.html'), 'utf8')
       };
       
       console.log('✅ Email templates loaded successfully');
@@ -277,6 +278,52 @@ class EmailService {
     } catch (error) {
       console.error('❌ Failed to send custom email:', error);
       throw new Error(`Failed to send custom email: ${error.message}`);
+    }
+  }
+
+  // Send musician credentials email
+  async sendMusicianCredentials(userData) {
+    try {
+      // Check if SMTP is configured
+      if (!this.transporter) {
+        console.log('⚠️ SMTP not configured. Musician credentials email not sent.');
+        return { success: false, message: 'Email service not configured' };
+      }
+
+      const { email, firstName, lastName, password, musicianName, isCustomPassword } = userData;
+      
+      const variables = {
+        firstName: firstName || 'Musician',
+        lastName: lastName || '',
+        email: email,
+        password: password,
+        musicianName: musicianName,
+        isCustomPassword: isCustomPassword ? 'Custom password has been set' : 'Default password is your phone number',
+        loginUrl: process.env.APP_URL || 'https://princemusicapp.com/musician/login',
+        appUrl: process.env.APP_URL || 'https://princemusicapp.com',
+        privacyUrl: process.env.PRIVACY_URL || 'https://princemusicapp.com/privacy',
+        termsUrl: process.env.TERMS_URL || 'https://princemusicapp.com/terms'
+      };
+
+      const html = this.replaceTemplateVariables(this.templates.musicianCredentials, variables);
+
+      const mailOptions = {
+        from: {
+          name: 'Prince Music App',
+          address: process.env.SMTP_FROM || process.env.SMTP_USER
+        },
+        to: email,
+        subject: '🎵 Welcome to Prince Music App - Musician Portal Access',
+        html: html,
+        text: `Hello ${firstName}! Your musician account has been created. Email: ${email}, Password: ${password}`
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Musician credentials email sent:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Failed to send musician credentials email:', error);
+      throw new Error(`Failed to send musician credentials email: ${error.message}`);
     }
   }
 

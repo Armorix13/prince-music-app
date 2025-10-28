@@ -330,7 +330,7 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
           isOtpVerified: true, // Social login doesn't need OTP
           loginAt: new Date()
         };
-
+              
         user = await User.create(userData);
       }
     }

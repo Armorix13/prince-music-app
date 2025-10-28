@@ -46,6 +46,10 @@ const musicianSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+    isProfileCompleted: {
+      type: Boolean,
+      default: false
     }
   },
   {

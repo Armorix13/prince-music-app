@@ -8,13 +8,13 @@ import {
   getCourseCategories
 } from '../controller/course.controller.js';
 import { validateBody, validateQuery, validateParams } from '../middlewares/validation.js';
-import { authenticate, authenticateMusician } from '../middlewares/auth.js';
+import { authenticate, authenticateMusician, optionalAuth } from '../middlewares/auth.js';
 import { courseValidation } from '../validation/course.validation.js';
 
 const router = express.Router();
 
-// Public routes (no authentication required)
-router.get('/', validateQuery(courseValidation.courseQuery), getAllCourses);
+// Public routes (optional authentication for myCourses)
+router.get('/', optionalAuth, validateQuery(courseValidation.courseQuery), getAllCourses);
 router.get('/categories', getCourseCategories);
 router.get('/:courseId', validateParams(courseValidation.courseId), getCourseById);
 
