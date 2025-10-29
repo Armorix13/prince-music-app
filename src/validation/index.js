@@ -35,8 +35,15 @@ export {
   commonSchemas
 } from './common.validation.js';
 
+// Tutor request validation schemas
+export {
+  requestTutorSchema,
+  checkTutorRequestStatusSchema
+} from './tutorRequest.validation.js';
+
 // Re-export all schemas for convenience
 export * from './user.validation.js';
 export * from './auth.validation.js';
 export * from './otp.validation.js';
 export * from './common.validation.js';
+export * from './tutorRequest.validation.js';
