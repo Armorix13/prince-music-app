@@ -2,7 +2,8 @@
 export {
   userSignupSchema,
   userLoginSchema,
-  userUpdateSchema
+  userUpdateSchema,
+  changePasswordSchema
 } from './user.validation.js';
 
 // Authentication validation schemas

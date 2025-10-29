@@ -925,6 +925,15 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
     if (!user) {
       throw new NotFoundError('User not found');
     }
+    // Check if OTP was verified for password reset
+    if (!user.isOtpVerified) {
+      throw new UnauthorizedError('Please verify OTP first before resetting password');
+    }
+
+    // Check if OTP is for password reset
+    if (user.otpFor !== 'resetPassword') {
+      throw new UnauthorizedError('OTP is not valid for password reset');
+    }
 
     // Validate new password
     const passwordValidation = passwordUtils.validatePasswordStrength(newPassword);
@@ -934,6 +943,13 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
 
     // Update password
     user.password = await passwordUtils.hashPassword(newPassword);
+
+    // Clear OTP fields after successful password reset
+    user.otp = null;
+    user.otpCreatedAt = null;
+    user.otpExpiresAt = null;
+    user.otpFor = null;
+    user.isOtpVerified = false;
 
     await user.save();
 
@@ -1164,6 +1180,50 @@ export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
       expiresAt: otpExpiresAt,
       expiresIn: '10 minutes'
     });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Change password (for authenticated users)
+export const changePassword = asyncHandler(async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    // Check if user has a password (normal users)
+    if (user.socialType !== 'normal' || !user.password) {
+      throw new UnauthorizedError('Password change is only available for normal accounts');
+    }
+
+    // Verify old password
+    const isOldPasswordValid = await passwordUtils.comparePassword(oldPassword, user.password);
+    if (!isOldPasswordValid) {
+      throw new UnauthorizedError('Old password is incorrect');
+    }
+
+    // Check if new password is different from old password
+    if (oldPassword === newPassword) {
+      throw new ValidationError('New password must be different from old password');
+    }
+
+    // Validate new password strength
+    const passwordValidation = passwordUtils.validatePasswordStrength(newPassword);
+    if (!passwordValidation.isValid) {
+      throw new ValidationError(passwordValidation.errors.join(', '));
+    }
+
+    // Update password
+    user.password = await passwordUtils.hashPassword(newPassword);
+    await user.save();
+
+    responseUtils.success(res, 'Password changed successfully');
 
   } catch (error) {
     next(error);

@@ -263,3 +263,22 @@ export const userUpdateSchema = Joi.object({
       'string.empty': 'Device token cannot be empty'
     })
 });
+
+// Change password validation schema
+export const changePasswordSchema = Joi.object({
+  oldPassword: Joi.string()
+    .required()
+    .messages({
+     'string.empty': 'Old password is required',
+      'any.required': 'Old password is required'
+    }),
+  
+  newPassword: Joi.string()
+    .min(8)
+    .required()
+    .messages({
+      'string.empty': 'New password is required',
+      'string.min': 'New password must be at least 8 characters long',
+      'any.required': 'New password is required'
+    })
+});

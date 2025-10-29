@@ -14,6 +14,7 @@ import {
   requestPasswordResetOTP,
   getUserProfile, 
   updateUserProfile,
+  changePassword,
   logout,
   logoutAll,
   refreshToken,
@@ -40,6 +41,7 @@ import {
   emailUpdateVerificationSchema,
   phoneUpdateVerificationSchema,
   userUpdateSchema,
+  changePasswordSchema,
   refreshTokenSchema
 } from '../validation/index.js';
 
@@ -94,6 +96,7 @@ router.use(authenticate); // All routes below require authentication
 
 router.get('/profile', getUserProfile);
 router.put('/profile', validateBody(userUpdateSchema), updateUserProfile);
+router.post('/change-password', validateBody(changePasswordSchema), changePassword);
 router.post('/logout', logout);
 router.post('/logout-all', logoutAll);
 router.delete('/account', validateBody(Joi.object({ password: Joi.string().optional() })), deleteAccount);
