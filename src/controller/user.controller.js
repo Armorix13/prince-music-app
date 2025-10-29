@@ -1,20 +1,20 @@
 import { asyncHandler } from '../middlewares/errorHandler.js';
-import {
-  ValidationError,
-  ConflictError,
-  UnauthorizedError,
+import { 
+  ValidationError, 
+  ConflictError, 
+  UnauthorizedError, 
   NotFoundError,
-  InternalServerError
+  InternalServerError 
 } from '../utils/customError.js';
-import {
-  passwordUtils,
-  jwtUtils,
-  emailUtils,
-  phoneUtils,
+import { 
+  passwordUtils, 
+  jwtUtils, 
+  emailUtils, 
+  phoneUtils, 
   dateUtils,
   securityUtils,
   otpUtils,
-  responseUtils
+  responseUtils 
 } from '../utils/helpers.js';
 import { User } from '../model/user.model.js';
 import { Musician } from '../model/musician.model.js';
@@ -24,13 +24,13 @@ import emailService from '../services/emailService.js';
 // User signup controller
 export const signup = asyncHandler(async (req, res, next) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      countryCode,
-      phoneNumber,
-      dob,
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      countryCode, 
+      phoneNumber, 
+      dob, 
       password,
       socialType = 'normal',
       socialId,
@@ -50,7 +50,7 @@ export const signup = asyncHandler(async (req, res, next) => {
     }
 
     // Check if user already exists by email and musicianId combination
-    const existingUserByEmailAndMusician = await User.findOne({
+    const existingUserByEmailAndMusician = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -67,8 +67,8 @@ export const signup = asyncHandler(async (req, res, next) => {
 
     // Check if user already exists by phone and musicianId combination (if provided)
     if (phoneNumber && countryCode) {
-      const existingUserByPhoneAndMusician = await User.findOne({
-        phoneNumber,
+      const existingUserByPhoneAndMusician = await User.findOne({ 
+        phoneNumber, 
         countryCode,
         musicianId: musicianId
       });
@@ -151,7 +151,7 @@ export const signup = asyncHandler(async (req, res, next) => {
       //   firstName: user.firstName,
       //   otp: otp
       // }, 'emailVerification');
-
+      
       // if (!emailResult.success) {
       //   console.log('⚠️ Email service not configured. OTP not sent via email.');
       // }
@@ -206,7 +206,7 @@ export const login = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({
+    const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -275,12 +275,12 @@ export const login = asyncHandler(async (req, res, next) => {
 // Social login controller
 export const socialLogin = asyncHandler(async (req, res, next) => {
   try {
-    const {
-      socialType,
-      socialId,
-      email,
-      firstName,
-      lastName,
+    const { 
+      socialType, 
+      socialId, 
+      email, 
+      firstName, 
+      lastName, 
       profileImage,
       deviceType,
       deviceToken,
@@ -301,11 +301,11 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
     if (!user) {
       // Check if user exists with email and musicianId
       if (email) {
-        user = await User.findOne({
+        user = await User.findOne({ 
           email: emailUtils.normalizeEmail(email),
-          musicianId: musicianId
+          musicianId: musicianId 
         });
-
+        
         if (user) {
           // Update existing user with social info
           user.socialType = socialType;
@@ -330,7 +330,7 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
           isOtpVerified: true, // Social login doesn't need OTP
           loginAt: new Date()
         };
-              
+
         user = await User.create(userData);
       }
     }
@@ -390,7 +390,7 @@ export const requestOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({
+    const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -437,7 +437,7 @@ export const requestOTP = asyncHandler(async (req, res, next) => {
       }
 
       const emailResult = await emailService.sendOTP(emailData, otpFor);
-
+      
       if (!emailResult.success) {
         console.log('⚠️ Email service not configured. OTP not sent via email.');
       }
@@ -473,7 +473,7 @@ export const verifyOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({
+    const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -566,13 +566,13 @@ export const getUserProfile = asyncHandler(async (req, res, next) => {
 // Update user profile
 export const updateUserProfile = asyncHandler(async (req, res, next) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      countryCode,
-      phoneNumber,
-      dob,
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      countryCode, 
+      phoneNumber, 
+      dob, 
       profileImage,
       theme,
       deviceType,
@@ -592,7 +592,7 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
         throw new ValidationError(emailValidation.error);
       }
 
-      const existingUser = await User.findOne({
+      const existingUser = await User.findOne({ 
         email: emailUtils.normalizeEmail(email),
         musicianId: user.musicianId
       });
@@ -604,7 +604,7 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
       user.email = emailUtils.normalizeEmail(email);
       user.isEmailVerified = false;
       user.isOtpVerified = false;
-
+      
       // Generate OTP for email verification
       const otp = otpUtils.generateOTP();
       user.otp = otp;
@@ -620,8 +620,8 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
         throw new ValidationError(phoneValidation.error);
       }
 
-      const existingUser = await User.findOne({
-        phoneNumber,
+      const existingUser = await User.findOne({ 
+        phoneNumber, 
         countryCode,
         musicianId: user.musicianId
       });
@@ -784,7 +784,7 @@ export const verifyAccountOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({
+    const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -867,7 +867,7 @@ export const verifyPasswordResetOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({
+    const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -918,7 +918,7 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({
+    const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -958,7 +958,7 @@ export const verifyEmailUpdateOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({
+    const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -988,7 +988,7 @@ export const verifyEmailUpdateOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Check if new email already exists for this musician
-    const existingUser = await User.findOne({
+    const existingUser = await User.findOne({ 
       email: emailUtils.normalizeEmail(newEmail),
       musicianId: user.musicianId
     });
@@ -1037,7 +1037,7 @@ export const verifyPhoneUpdateOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({
+    const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -1067,8 +1067,8 @@ export const verifyPhoneUpdateOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Check if new phone already exists for this musician
-    const existingUser = await User.findOne({
-      phoneNumber: newPhoneNumber,
+    const existingUser = await User.findOne({ 
+      phoneNumber: newPhoneNumber, 
       countryCode: newCountryCode,
       musicianId: user.musicianId
     });
@@ -1117,7 +1117,7 @@ export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({
+    const user = await User.findOne({ 
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -1150,7 +1150,7 @@ export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
         firstName: user.firstName,
         otp: otp
       }, 'resetPassword');
-
+      
       if (!emailResult.success) {
         console.log('⚠️ Email service not configured. OTP not sent via email.');
       }

@@ -64,7 +64,8 @@ export const createOrUpdatePortfolio = async (req, res, next) => {
 // Add Content to Section
 export const addContentToSection = async (req, res, next) => {
   try {
-    const { musicianId, sectionTitle, content } = req.body;
+    const musicianId = req.user.musicianId;
+    const { sectionTitle, content } = req.body;
 
     // Find the musician
     const musician = await Musician.findOne({ musicianId, isActive: true });
@@ -104,7 +105,7 @@ export const addContentToSection = async (req, res, next) => {
 // Get Complete Portfolio by Musician ID
 export const getPortfolio = async (req, res, next) => {
   try {
-    const { musicianId } = req.params;
+    const musicianId = req.user.musicianId;
 
     // Find the musician
     const musician = await Musician.findOne({ musicianId, isActive: true });

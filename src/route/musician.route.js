@@ -25,7 +25,7 @@ router.get('/profile', authenticate, requireMusician, getMusicianProfile);
 router.put('/profile', authenticate, requireMusician, validate(updateMusicianProfileSchema), updateMusicianProfile);
 
 // Admin only routes
-router.post('/create', authenticate, requireAdmin, validate(createMusicianSchema), createMusician);
+router.post('/create',/* authenticate,  requireAdmin, */ validate(createMusicianSchema), createMusician);
 router.get('/all', authenticate, requireAdmin, getAllMusicians);
 router.delete('/:musicianId', authenticate, requireAdmin, deleteMusician);
 

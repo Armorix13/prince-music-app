@@ -33,7 +33,7 @@ const portfolioSchema = Joi.object({
 });
 
 const addContentSchema = Joi.object({
-  musicianId: Joi.number().integer().positive().required(),
+  musicianId: Joi.number().integer().positive().optional(),
   sectionTitle: Joi.string().required(),
   content: Joi.object({
     title: Joi.string().required(),
@@ -67,8 +67,8 @@ router.get('/portfolio/email/:email', getPortfolioByEmail);
 router.post('/add-update-portfolio', validateBody(portfolioSchema), createOrUpdatePortfolio);
 
 
-router.get('/:musicianId', getPortfolio);
-router.post('/section/content', validateBody(addContentSchema), addContentToSection);
+router.get('/',authenticate, getPortfolio);
+router.post('/section/content',authenticate, validateBody(addContentSchema), addContentToSection);
 router.put('/:musicianId/section/:sectionTitle/content', validateBody(updateContentSchema), updateSectionContent);
 router.delete('/:musicianId/section/:sectionTitle', deleteSection);
 router.get('/:musicianId/sections', getMusicianSections);

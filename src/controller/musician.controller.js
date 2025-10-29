@@ -23,7 +23,6 @@ export const createMusician = asyncHandler(async (req, res, next) => {
       email,
       firstName,
       lastName,
-      password,
       phoneNumber,
       musicianName,
       description,
@@ -39,7 +38,7 @@ export const createMusician = asyncHandler(async (req, res, next) => {
     }
 
     // Use phoneNumber as default password if password not provided
-    const finalPassword = password || phoneNumber;
+    const finalPassword = phoneNumber;
 
     // Check if musician with this name already exists
     const existingMusician = await Musician.findOne({ name: musicianName });
@@ -97,7 +96,7 @@ export const createMusician = asyncHandler(async (req, res, next) => {
         lastName: user.lastName,
         password: finalPassword,
         musicianName: musician.name,
-        isCustomPassword: !!password
+        isCustomPassword: false
       });
       console.log('✅ Musician credentials email sent successfully');
     } catch (emailError) {
@@ -133,7 +132,7 @@ export const createMusician = asyncHandler(async (req, res, next) => {
         email: user.email,
         phoneNumber: user.phoneNumber,
         defaultPassword: phoneNumber,
-        note: password ? 'Custom password set' : 'Password set to phone number'
+        note:'Password set to phone number'
       }
     }, 201);
 

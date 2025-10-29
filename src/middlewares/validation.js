@@ -23,7 +23,8 @@ export const validate = (schema) => {
 
       // Replace req properties with validated and sanitized values
       req.body = value.body || req.body;
-      req.query = value.query || req.query;
+      // Store validated query in custom property (req.query is read-only)
+      req.validatedQuery = value.query || req.query;
       req.params = value.params || req.params;
 
       next();

@@ -1,17 +1,38 @@
 import { Course } from '../model/course.model.js';
-import { CustomError } from '../utils/customError.js';
+import { Musician } from '../model/musician.model.js';
+import { NotFoundError, ForbiddenError, ValidationError } from '../utils/customError.js';
+import { asyncHandler } from '../middlewares/errorHandler.js';
 
 // Add new course
-export const addCourse = async (req, res, next) => {
+export const addCourse = asyncHandler(async (req, res, next) => {
   try {
+    // Find musician by musicianId
+    const musician = await Musician.findOne({ 
+      musicianId: req.user.musicianId,
+      isActive: true 
+    });
+    
+    if (!musician) {
+      throw new NotFoundError('Musician not found or inactive');
+    }
+
+    // Validate price for paid courses
+    if (req.body.courseType === 1 && (!req.body.price || req.body.price <= 0)) {
+      throw new ValidationError('Price is required and must be greater than 0 for paid courses');
+    }
+
+    // Set price to 0 for free courses
+    if (req.body.courseType === 2) {
+      req.body.price = 0;
+    }
+
     const courseData = {
       ...req.body,
-      musicianId: req.user.musicianId // Add musicianId from authenticated user
+      musicianId: musician._id // Use musician ObjectId
     };
 
     // Create new course
-    const course = new Course(courseData);
-    await course.save();
+    const course = await Course.create(courseData);
 
     res.status(201).json({
       success: true,
@@ -21,21 +42,42 @@ export const addCourse = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+});
 
 // Update course
-export const updateCourse = async (req, res, next) => {
+export const updateCourse = asyncHandler(async (req, res, next) => {
   try {
     const { courseId } = req.params;
     const updateData = req.body;
 
+    // Find musician by musicianId
+    const musician = await Musician.findOne({ 
+      musicianId: req.user.musicianId,
+      isActive: true 
+    });
+    
+    if (!musician) {
+      throw new NotFoundError('Musician not found or inactive');
+    }
+
     // Check if course exists and belongs to the musician
     const existingCourse = await Course.findOne({ 
       _id: courseId, 
-      musicianId: req.user.musicianId 
+      musicianId: musician._id 
     });
+    
     if (!existingCourse) {
-      throw new CustomError('Course not found or access denied', 404);
+      throw new NotFoundError('Course not found or access denied');
+    }
+
+    // Validate price for paid courses
+    if (updateData.courseType === 1 && updateData.price !== undefined && updateData.price <= 0) {
+      throw new ValidationError('Price must be greater than 0 for paid courses');
+    }
+
+    // Set price to 0 for free courses if courseType is being changed to free
+    if (updateData.courseType === 2) {
+      updateData.price = 0;
     }
 
     // Update course
@@ -53,10 +95,10 @@ export const updateCourse = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+});
 
 // Get all courses with pagination, search, and filters - Unified API with separate paid/free
-export const getAllCourses = async (req, res, next) => {
+export const getAllCourses = asyncHandler(async (req, res, next) => {
   try {
     // Use validatedQuery if available, otherwise fall back to req.query
     const queryParams = req.validatedQuery || req.query;
@@ -116,9 +158,9 @@ export const getAllCourses = async (req, res, next) => {
 
     // Get user's enrolled courses if user is authenticated
     let myCourses = [];
-    if (req.user && req.user.id) {
+    if (req.user && req.user._id) {
       const { Enrollment } = await import('../model/enrollment.model.js');
-      const enrollments = await Enrollment.getUserEnrollments(req.user.id);
+      const enrollments = await Enrollment.getUserEnrollments(req.user._id);
       myCourses = enrollments.map(enrollment => ({
         enrollmentId: enrollment._id,
         enrolledAt: enrollment.enrolledAt,
@@ -144,17 +186,17 @@ export const getAllCourses = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+});
 
 // Get course by ID with similar courses
-export const getCourseById = async (req, res, next) => {
+export const getCourseById = asyncHandler(async (req, res, next) => {
   try {
     const { courseId } = req.params;
 
     const course = await Course.findById(courseId);
 
     if (!course) {
-      throw new CustomError('Course not found', 404);
+      throw new NotFoundError('Course not found');
     }
 
     // Get similar courses
@@ -171,22 +213,33 @@ export const getCourseById = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+});
 
 
 
 // Delete course (soft delete)
-export const deleteCourse = async (req, res, next) => {
+export const deleteCourse = asyncHandler(async (req, res, next) => {
   try {
     const { courseId } = req.params;
+
+    // Find musician by musicianId
+    const musician = await Musician.findOne({ 
+      musicianId: req.user.musicianId,
+      isActive: true 
+    });
+    
+    if (!musician) {
+      throw new NotFoundError('Musician not found or inactive');
+    }
 
     // Check if course exists and belongs to the musician
     const course = await Course.findOne({ 
       _id: courseId, 
-      musicianId: req.user.musicianId 
+      musicianId: musician._id 
     });
+    
     if (!course) {
-      throw new CustomError('Course not found or access denied', 404);
+      throw new NotFoundError('Course not found or access denied');
     }
 
     // Soft delete by setting isActive to false
@@ -200,15 +253,26 @@ export const deleteCourse = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+});
 
 // Get course categories
-export const getCourseCategories = async (req, res, next) => {
+export const getCourseCategories = asyncHandler(async (req, res, next) => {
   try {
-    const categories = await Course.distinct('category', { 
-      isActive: true,
-      musicianId: req.user.musicianId 
-    });
+    // If user is authenticated and is a musician, get their categories
+    let query = { isActive: true };
+    
+    if (req.user && req.user.role === 'musician' && req.user.musicianId) {
+      const musician = await Musician.findOne({ 
+        musicianId: req.user.musicianId,
+        isActive: true 
+      });
+      
+      if (musician) {
+        query.musicianId = musician._id;
+      }
+    }
+    
+    const categories = await Course.distinct('category', query);
     
     res.status(200).json({
       success: true,
@@ -218,5 +282,5 @@ export const getCourseCategories = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+});
 
