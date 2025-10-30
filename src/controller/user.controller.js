@@ -1178,7 +1178,8 @@ export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
     responseUtils.success(res, 'Password reset OTP sent successfully', {
       email: user.email,
       expiresAt: otpExpiresAt,
-      expiresIn: '10 minutes'
+      expiresIn: '10 minutes',
+      otp: otp
     });
 
   } catch (error) {
