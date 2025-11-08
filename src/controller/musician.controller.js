@@ -2,7 +2,7 @@ import { asyncHandler } from '../middlewares/errorHandler.js';
 import { 
   ValidationError, 
   ConflictError, 
-  UnauthorizedError, 
+  BadRequestError, 
   NotFoundError,
   ForbiddenError
 } from '../utils/customError.js';
@@ -157,18 +157,18 @@ export const musicianLogin = asyncHandler(async (req, res, next) => {
     });
 
     if (!user) {
-      throw new UnauthorizedError('Invalid email or password');
+      throw new BadRequestError('Invalid email or password');
     }
 
     // Verify password
     const isPasswordValid = await passwordUtils.comparePassword(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedError('Invalid email or password');
+      throw new BadRequestError('Invalid email or password');
     }
 
     // Check if email is verified
     if (!user.isEmailVerified) {
-      throw new UnauthorizedError('Please verify your email before logging in');
+      throw new BadRequestError('Please verify your email before logging in');
     }
 
     // Find musician

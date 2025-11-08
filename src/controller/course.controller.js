@@ -2,6 +2,7 @@ import { Course } from '../model/course.model.js';
 import { Musician } from '../model/musician.model.js';
 import { NotFoundError, ForbiddenError, ValidationError } from '../utils/customError.js';
 import { asyncHandler } from '../middlewares/errorHandler.js';
+import { Enrollment } from '../model/enrollment.model.js';
 
 // Add new course
 export const addCourse = asyncHandler(async (req, res, next) => {
@@ -100,6 +101,7 @@ export const updateCourse = asyncHandler(async (req, res, next) => {
 // Get all courses with pagination, search, and filters - Unified API with separate paid/free
 export const getAllCourses = asyncHandler(async (req, res, next) => {
   try {
+    console.log(req.user.id);
     // Use validatedQuery if available, otherwise fall back to req.query
     const queryParams = req.validatedQuery || req.query;
     
@@ -158,10 +160,15 @@ export const getAllCourses = asyncHandler(async (req, res, next) => {
 
     // Get user's enrolled courses if user is authenticated
     let myCourses = [];
-    if (req.user && req.user._id) {
-      const { Enrollment } = await import('../model/enrollment.model.js');
-      const enrollments = await Enrollment.getUserEnrollments(req.user._id);
-      myCourses = enrollments.map(enrollment => ({
+    if (req.user && req.user.id) {
+      const userId = req.user.id; // Assuming user ID comes from auth middleware
+      console.log(userId);
+
+      // Get user's active enrollments
+      const enrollments = await Enrollment.getUserEnrollments(userId);
+  
+      // Format all courses in a single array
+      const allCourses = enrollments.map(enrollment => ({
         enrollmentId: enrollment._id,
         enrolledAt: enrollment.enrolledAt,
         expiresAt: enrollment.expiresAt,
@@ -171,6 +178,7 @@ export const getAllCourses = asyncHandler(async (req, res, next) => {
         progress: enrollment.progress,
         course: enrollment.course
       }));
+      myCourses = allCourses;
     }
 
     res.status(200).json({

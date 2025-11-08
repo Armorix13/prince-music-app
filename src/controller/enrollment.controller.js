@@ -79,6 +79,7 @@ export const enrollInCourse = async (req, res, next) => {
 export const getMyCourses = async (req, res, next) => {
   try {
     const userId = req.user.id; // Assuming user ID comes from auth middleware
+    console.log(userId);
 
     // Get user's active enrollments
     const enrollments = await Enrollment.getUserEnrollments(userId);

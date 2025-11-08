@@ -17,6 +17,12 @@ export class ValidationError extends CustomError {
   }
 }
 
+export class BadRequestError extends CustomError {
+  constructor(message = 'Bad request') {
+    super(message, 400);
+  }
+}
+
 export class NotFoundError extends CustomError {
   constructor(message = 'Resource not found') {
     super(message, 404);

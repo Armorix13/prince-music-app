@@ -1,20 +1,21 @@
 import { asyncHandler } from '../middlewares/errorHandler.js';
-import { 
-  ValidationError, 
-  ConflictError, 
-  UnauthorizedError, 
+import {
+  ValidationError,
+  ConflictError,
+  UnauthorizedError,
+  BadRequestError,
   NotFoundError,
-  InternalServerError 
+  InternalServerError
 } from '../utils/customError.js';
-import { 
-  passwordUtils, 
-  jwtUtils, 
-  emailUtils, 
-  phoneUtils, 
+import {
+  passwordUtils,
+  jwtUtils,
+  emailUtils,
+  phoneUtils,
   dateUtils,
   securityUtils,
   otpUtils,
-  responseUtils 
+  responseUtils
 } from '../utils/helpers.js';
 import { User } from '../model/user.model.js';
 import { Musician } from '../model/musician.model.js';
@@ -24,13 +25,13 @@ import emailService from '../services/emailService.js';
 // User signup controller
 export const signup = asyncHandler(async (req, res, next) => {
   try {
-    const { 
-      firstName, 
-      lastName, 
-      email, 
-      countryCode, 
-      phoneNumber, 
-      dob, 
+    const {
+      firstName,
+      lastName,
+      email,
+      countryCode,
+      phoneNumber,
+      dob,
       password,
       socialType = 'normal',
       socialId,
@@ -50,7 +51,7 @@ export const signup = asyncHandler(async (req, res, next) => {
     }
 
     // Check if user already exists by email and musicianId combination
-    const existingUserByEmailAndMusician = await User.findOne({ 
+    const existingUserByEmailAndMusician = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -67,8 +68,8 @@ export const signup = asyncHandler(async (req, res, next) => {
 
     // Check if user already exists by phone and musicianId combination (if provided)
     if (phoneNumber && countryCode) {
-      const existingUserByPhoneAndMusician = await User.findOne({ 
-        phoneNumber, 
+      const existingUserByPhoneAndMusician = await User.findOne({
+        phoneNumber,
         countryCode,
         musicianId: musicianId
       });
@@ -151,7 +152,7 @@ export const signup = asyncHandler(async (req, res, next) => {
       //   firstName: user.firstName,
       //   otp: otp
       // }, 'emailVerification');
-      
+
       // if (!emailResult.success) {
       //   console.log('⚠️ Email service not configured. OTP not sent via email.');
       // }
@@ -206,28 +207,28 @@ export const login = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
     if (!user) {
-      throw new UnauthorizedError('Invalid email, password, or musician');
+      throw new BadRequestError('Invalid email, password, or musician');
     }
 
     // Check if email is verified
     if (!user.isEmailVerified) {
-      throw new UnauthorizedError('Please verify your email before logging in. Check your email for the verification OTP.');
+      throw new BadRequestError('Please verify your email before logging in. Check your email for the verification OTP.');
     }
 
     // For normal login, check password
     if (user.socialType === 'normal') {
       if (!password) {
-        throw new UnauthorizedError('Password is required for normal login');
+        throw new BadRequestError('Password is required for normal login');
       }
 
       const isPasswordValid = await passwordUtils.comparePassword(password, user.password);
       if (!isPasswordValid) {
-        throw new UnauthorizedError('Invalid email or password');
+        throw new BadRequestError('Invalid email or password');
       }
     }
 
@@ -275,12 +276,12 @@ export const login = asyncHandler(async (req, res, next) => {
 // Social login controller
 export const socialLogin = asyncHandler(async (req, res, next) => {
   try {
-    const { 
-      socialType, 
-      socialId, 
-      email, 
-      firstName, 
-      lastName, 
+    const {
+      socialType,
+      socialId,
+      email,
+      firstName,
+      lastName,
       profileImage,
       deviceType,
       deviceToken,
@@ -301,11 +302,11 @@ export const socialLogin = asyncHandler(async (req, res, next) => {
     if (!user) {
       // Check if user exists with email and musicianId
       if (email) {
-        user = await User.findOne({ 
+        user = await User.findOne({
           email: emailUtils.normalizeEmail(email),
-          musicianId: musicianId 
+          musicianId: musicianId
         });
-        
+
         if (user) {
           // Update existing user with social info
           user.socialType = socialType;
@@ -390,7 +391,7 @@ export const requestOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -400,7 +401,7 @@ export const requestOTP = asyncHandler(async (req, res, next) => {
 
     // Check if email is verified for OTP requests (except for initial email verification)
     if (!user.isEmailVerified && otpFor !== 'emailVerification') {
-      throw new UnauthorizedError('Please verify your email first before requesting OTP for other purposes');
+      throw new BadRequestError('Please verify your email first before requesting OTP for other purposes');
     }
 
     // Generate new OTP
@@ -437,7 +438,7 @@ export const requestOTP = asyncHandler(async (req, res, next) => {
       }
 
       const emailResult = await emailService.sendOTP(emailData, otpFor);
-      
+
       if (!emailResult.success) {
         console.log('⚠️ Email service not configured. OTP not sent via email.');
       }
@@ -473,7 +474,7 @@ export const verifyOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -483,17 +484,17 @@ export const verifyOTP = asyncHandler(async (req, res, next) => {
 
     // Check if OTP matches
     if (user.otp !== otp) {
-      throw new UnauthorizedError('Invalid OTP');
+      throw new BadRequestError('Invalid OTP');
     }
 
     // Check if OTP is expired
     if (otpUtils.isOTPExpired(user.otpCreatedAt, 10)) {
-      throw new UnauthorizedError('OTP has expired');
+      throw new BadRequestError('OTP has expired');
     }
 
     // Check if OTP is for the correct purpose
     if (user.otpFor !== otpFor) {
-      throw new UnauthorizedError('OTP is not valid for this purpose');
+      throw new BadRequestError('OTP is not valid for this purpose');
     }
 
     // Mark OTP as verified
@@ -566,13 +567,13 @@ export const getUserProfile = asyncHandler(async (req, res, next) => {
 // Update user profile
 export const updateUserProfile = asyncHandler(async (req, res, next) => {
   try {
-    const { 
-      firstName, 
-      lastName, 
-      email, 
-      countryCode, 
-      phoneNumber, 
-      dob, 
+    const {
+      firstName,
+      lastName,
+      email,
+      countryCode,
+      phoneNumber,
+      dob,
       profileImage,
       theme,
       deviceType,
@@ -592,7 +593,7 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
         throw new ValidationError(emailValidation.error);
       }
 
-      const existingUser = await User.findOne({ 
+      const existingUser = await User.findOne({
         email: emailUtils.normalizeEmail(email),
         musicianId: user.musicianId
       });
@@ -604,7 +605,7 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
       user.email = emailUtils.normalizeEmail(email);
       user.isEmailVerified = false;
       user.isOtpVerified = false;
-      
+
       // Generate OTP for email verification
       const otp = otpUtils.generateOTP();
       user.otp = otp;
@@ -620,8 +621,8 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
         throw new ValidationError(phoneValidation.error);
       }
 
-      const existingUser = await User.findOne({ 
-        phoneNumber, 
+      const existingUser = await User.findOne({
+        phoneNumber,
         countryCode,
         musicianId: user.musicianId
       });
@@ -742,7 +743,7 @@ export const refreshToken = asyncHandler(async (req, res, next) => {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      throw new UnauthorizedError('Refresh token is required');
+      throw new BadRequestError('Refresh token is required');
     }
 
     // Verify refresh token
@@ -751,7 +752,7 @@ export const refreshToken = asyncHandler(async (req, res, next) => {
     // Find user
     const user = await User.findById(decoded.id);
     if (!user) {
-      throw new UnauthorizedError('Invalid refresh token');
+      throw new BadRequestError('Invalid refresh token');
     }
 
     // Generate new tokens
@@ -784,7 +785,7 @@ export const verifyAccountOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -794,17 +795,17 @@ export const verifyAccountOTP = asyncHandler(async (req, res, next) => {
 
     // Check if OTP matches
     if (user.otp !== otp) {
-      throw new UnauthorizedError('Invalid OTP');
+      throw new BadRequestError('Invalid OTP');
     }
 
     // Check if OTP is expired
     if (otpUtils.isOTPExpired(user.otpCreatedAt, 10)) {
-      throw new UnauthorizedError('OTP has expired');
+      throw new BadRequestError('OTP has expired');
     }
 
     // Check if OTP is for email verification
     if (user.otpFor !== 'emailVerification') {
-      throw new UnauthorizedError('OTP is not valid for account verification');
+      throw new BadRequestError('OTP is not valid for account verification');
     }
 
     // Mark OTP as verified and email as verified
@@ -867,7 +868,7 @@ export const verifyPasswordResetOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -877,17 +878,17 @@ export const verifyPasswordResetOTP = asyncHandler(async (req, res, next) => {
 
     // Check if OTP matches
     if (user.otp !== otp) {
-      throw new UnauthorizedError('Invalid OTP');
+      throw new BadRequestError('Invalid OTP');
     }
 
     // Check if OTP is expired
     if (otpUtils.isOTPExpired(user.otpCreatedAt, 10)) {
-      throw new UnauthorizedError('OTP has expired');
+      throw new BadRequestError('OTP has expired');
     }
 
     // Check if OTP is for password reset
     if (user.otpFor !== 'resetPassword') {
-      throw new UnauthorizedError('OTP is not valid for password reset');
+      throw new BadRequestError('OTP is not valid for password reset');
     }
 
     // Mark OTP as verified (but don't clear it yet - user needs to reset password)
@@ -918,7 +919,7 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -927,12 +928,12 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
     }
     // Check if OTP was verified for password reset
     if (!user.isOtpVerified) {
-      throw new UnauthorizedError('Please verify OTP first before resetting password');
+      throw new BadRequestError('Please verify OTP first before resetting password');
     }
 
     // Check if OTP is for password reset
     if (user.otpFor !== 'resetPassword') {
-      throw new UnauthorizedError('OTP is not valid for password reset');
+      throw new BadRequestError('OTP is not valid for password reset');
     }
 
     // Validate new password
@@ -974,7 +975,7 @@ export const verifyEmailUpdateOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -984,17 +985,17 @@ export const verifyEmailUpdateOTP = asyncHandler(async (req, res, next) => {
 
     // Check if OTP matches
     if (user.otp !== otp) {
-      throw new UnauthorizedError('Invalid OTP');
+      throw new BadRequestError('Invalid OTP');
     }
 
     // Check if OTP is expired
     if (otpUtils.isOTPExpired(user.otpCreatedAt, 10)) {
-      throw new UnauthorizedError('OTP has expired');
+      throw new BadRequestError('OTP has expired');
     }
 
     // Check if OTP is for email update
     if (user.otpFor !== 'updateEmail') {
-      throw new UnauthorizedError('OTP is not valid for email update');
+      throw new BadRequestError('OTP is not valid for email update');
     }
 
     // Validate new email
@@ -1004,7 +1005,7 @@ export const verifyEmailUpdateOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Check if new email already exists for this musician
-    const existingUser = await User.findOne({ 
+    const existingUser = await User.findOne({
       email: emailUtils.normalizeEmail(newEmail),
       musicianId: user.musicianId
     });
@@ -1053,7 +1054,7 @@ export const verifyPhoneUpdateOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -1063,17 +1064,17 @@ export const verifyPhoneUpdateOTP = asyncHandler(async (req, res, next) => {
 
     // Check if OTP matches
     if (user.otp !== otp) {
-      throw new UnauthorizedError('Invalid OTP');
+      throw new BadRequestError('Invalid OTP');
     }
 
     // Check if OTP is expired
     if (otpUtils.isOTPExpired(user.otpCreatedAt, 10)) {
-      throw new UnauthorizedError('OTP has expired');
+      throw new BadRequestError('OTP has expired');
     }
 
     // Check if OTP is for phone update
     if (user.otpFor !== 'updatePhoneNumber') {
-      throw new UnauthorizedError('OTP is not valid for phone update');
+      throw new BadRequestError('OTP is not valid for phone update');
     }
 
     // Validate new phone
@@ -1083,8 +1084,8 @@ export const verifyPhoneUpdateOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Check if new phone already exists for this musician
-    const existingUser = await User.findOne({ 
-      phoneNumber: newPhoneNumber, 
+    const existingUser = await User.findOne({
+      phoneNumber: newPhoneNumber,
       countryCode: newCountryCode,
       musicianId: user.musicianId
     });
@@ -1133,7 +1134,7 @@ export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
     }
 
     // Find user by email and musicianId combination
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: emailUtils.normalizeEmail(email),
       musicianId: musicianId
     });
@@ -1143,7 +1144,7 @@ export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
 
     // Check if email is verified
     if (!user.isEmailVerified) {
-      throw new UnauthorizedError('Please verify your email first before requesting password reset');
+      throw new BadRequestError('Please verify your email first before requesting password reset');
     }
 
     // Generate new OTP
@@ -1166,7 +1167,7 @@ export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
         firstName: user.firstName,
         otp: otp
       }, 'resetPassword');
-      
+
       if (!emailResult.success) {
         console.log('⚠️ Email service not configured. OTP not sent via email.');
       }
@@ -1200,13 +1201,13 @@ export const changePassword = asyncHandler(async (req, res, next) => {
 
     // Check if user has a password (normal users)
     if (user.socialType !== 'normal' || !user.password) {
-      throw new UnauthorizedError('Password change is only available for normal accounts');
+      throw new BadRequestError('Password change is only available for normal accounts');
     }
 
     // Verify old password
     const isOldPasswordValid = await passwordUtils.comparePassword(oldPassword, user.password);
     if (!isOldPasswordValid) {
-      throw new UnauthorizedError('Old password is incorrect');
+      throw new BadRequestError('Old password is incorrect');
     }
 
     // Check if new password is different from old password
@@ -1246,7 +1247,7 @@ export const deleteAccount = asyncHandler(async (req, res, next) => {
     if (user.socialType === 'normal' && password) {
       const isPasswordValid = await passwordUtils.comparePassword(password, user.password);
       if (!isPasswordValid) {
-        throw new UnauthorizedError('Password is incorrect');
+        throw new BadRequestError('Password is incorrect');
       }
     }
 

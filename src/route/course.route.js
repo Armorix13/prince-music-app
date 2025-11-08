@@ -14,7 +14,7 @@ import { courseValidation } from '../validation/course.validation.js';
 const router = express.Router();
 
 // Public routes (optional authentication for myCourses)
-router.get('/', optionalAuth, validateQuery(courseValidation.courseQuery), getAllCourses);
+router.get('/', authenticate, validateQuery(courseValidation.courseQuery), getAllCourses);
 router.get('/categories', getCourseCategories);
 router.get('/:courseId', validateParams(courseValidation.courseId), getCourseById);
 
