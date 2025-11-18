@@ -8,6 +8,7 @@ import musicianRoutes from './musician.route.js';
 import tutorRequestRoutes from './tutorRequest.route.js';
 import faqRoutes from './faq.route.js';
 import feedbackRoutes from './feedback.route.js';
+import bookProgramRoutes from './bookprogram.route.js';
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ router.use(`${API_VERSION}/musicians`, musicianRoutes);
 router.use(`${API_VERSION}/tutor-requests`, tutorRequestRoutes);
 router.use(`${API_VERSION}/faqs`, faqRoutes);
 router.use(`${API_VERSION}/feedback`, feedbackRoutes);
-
+router.use(`${API_VERSION}/bookprograms`, bookProgramRoutes);
 router.get('/health', (req, res) => {
   res.status(200).json({
     success: true,

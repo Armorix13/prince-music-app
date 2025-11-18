@@ -1192,7 +1192,7 @@ export const requestPasswordResetOTP = asyncHandler(async (req, res, next) => {
 export const changePassword = asyncHandler(async (req, res, next) => {
   try {
     const { oldPassword, newPassword } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user) {

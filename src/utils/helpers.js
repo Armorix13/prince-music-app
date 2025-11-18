@@ -73,7 +73,7 @@ export const jwtUtils = {
       }
       
       const options = {
-        expiresIn: process.env.JWT_EXPIRE || '15m',
+        expiresIn: undefined,
         issuer: process.env.JWT_ISSUER || 'prince-music-app',
         audience: process.env.JWT_AUDIENCE || 'prince-music-users'
       };
@@ -97,7 +97,8 @@ export const jwtUtils = {
       }
       
       const options = {
-        expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d',
+        // expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d',
+        expiresIn: undefined,
         issuer: process.env.JWT_ISSUER || 'prince-music-app',
         audience: process.env.JWT_AUDIENCE || 'prince-music-users'
       };

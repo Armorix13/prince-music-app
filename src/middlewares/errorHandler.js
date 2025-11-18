@@ -2,64 +2,53 @@ import { CustomError } from '../utils/customError.js';
 
 // Global error handling middleware
 export const errorHandler = (err, req, res, next) => {
-  let error = { ...err };
-  error.message = err.message;
-
-  // Log error for debugging
   console.error('Error:', err);
 
-  // If error is already a CustomError instance, use its statusCode
-  if (err instanceof CustomError) {
-    return res.status(err.statusCode).json({
-      success: false,
-      error: err.message || 'Server Error',
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    });
-  }
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Server Error';
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
-    const message = 'Resource not found';
-    error = new CustomError(message, 404);
+    statusCode = 404;
+    message = 'Resource not found';
   }
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    const message = 'Duplicate field value entered';
-    error = new CustomError(message, 400);
+    statusCode = 400;
+    message = 'Duplicate field value entered';
   }
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {
-    const message = Object.values(err.errors).map(val => val.message).join(', ');
-    error = new CustomError(message, 400);
+    message = Object.values(err.errors).map(val => val.message).join(', ');
+    statusCode = 400;
   }
 
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
-    const message = 'Invalid token';
-    error = new CustomError(message, 401);
+    message = 'Invalid token';
+    statusCode = 401;
   }
 
   if (err.name === 'TokenExpiredError') {
-    const message = 'Token expired';
-    error = new CustomError(message, 401);
+    message = 'Token expired';
+    statusCode = 401;
   }
 
-  res.status(error.statusCode || 500).json({
+  return res.status(statusCode).json({
     success: false,
-    error: error.message || 'Server Error',
+    message,  // <-- FIXED HERE (always in message key)
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 };
 
-// 404 handler for undefined routes
+// 404 handler
 export const notFound = (req, res, next) => {
-  const error = new CustomError(`Not found - ${req.originalUrl}`, 404);
-  next(error);
+  next(new CustomError(`Not found - ${req.originalUrl}`, 404));
 };
 
-// Async wrapper to catch errors in async functions
+// Async wrapper
 export const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };

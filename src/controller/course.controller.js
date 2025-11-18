@@ -101,7 +101,7 @@ export const updateCourse = asyncHandler(async (req, res, next) => {
 // Get all courses with pagination, search, and filters - Unified API with separate paid/free
 export const getAllCourses = asyncHandler(async (req, res, next) => {
   try {
-    console.log(req.user.id);
+    console.log(req.user?.id);
     // Use validatedQuery if available, otherwise fall back to req.query
     const queryParams = req.validatedQuery || req.query;
     
@@ -135,50 +135,61 @@ export const getAllCourses = asyncHandler(async (req, res, next) => {
       isActive: isActive !== undefined ? isActive === 'true' : null
     };
 
-    // Get paginated courses
+    // If user is authenticated, get user's active enrollments first so we can remove those courses
+    let myCourses = [];
+    let enrolledCourseIds = new Set();
+
+    if (req.user && req.user.id) {
+      const userId = req.user.id;
+      const enrollments = await Enrollment.getUserEnrollments(userId);
+
+      // Build myCourses array and set of enrolled course ids
+      myCourses = enrollments.map(enrollment => {
+        // enrollment.course should be populated by getUserEnrollments
+        const courseDoc = enrollment.course;
+        const courseId = courseDoc ? courseDoc._id.toString() : enrollment.course.toString();
+        enrolledCourseIds.add(courseId);
+
+        return {
+          enrollmentId: enrollment._id,
+          enrolledAt: enrollment.enrolledAt,
+          expiresAt: enrollment.expiresAt,
+          daysRemaining: enrollment.daysRemaining,
+          isExpired: enrollment.isExpired,
+          enrollmentType: enrollment.enrollmentType,
+          progress: enrollment.progress,
+          course: courseDoc
+        };
+      });
+    }
+
+    // Get paginated courses (all courses list)
     const allCoursesResult = await Course.getCoursesWithPagination(options);
 
-    // Get all paid courses (without pagination and without search)
+    // Prepare paid and free course options (without search)
     const paidCoursesOptions = {
       ...options,
-      courseType: 1, // paid courses
-      search: '', // Remove search for paid courses
+      courseType: 1,
+      search: '',
       page: 1,
-      limit: 1000 // large limit to get all
+      limit: 1000
     };
-    const paidCoursesResult = await Course.getCoursesWithPagination(paidCoursesOptions);
-
-    // Get all free courses (without pagination and without search)
     const freeCoursesOptions = {
       ...options,
-      courseType: 2, // free courses
-      search: '', // Remove search for free courses
+      courseType: 2,
+      search: '',
       page: 1,
-      limit: 1000 // large limit to get all
+      limit: 1000
     };
+
+    // Fetch paid & free courses
+    const paidCoursesResult = await Course.getCoursesWithPagination(paidCoursesOptions);
     const freeCoursesResult = await Course.getCoursesWithPagination(freeCoursesOptions);
 
-    // Get user's enrolled courses if user is authenticated
-    let myCourses = [];
-    if (req.user && req.user.id) {
-      const userId = req.user.id; // Assuming user ID comes from auth middleware
-      console.log(userId);
-
-      // Get user's active enrollments
-      const enrollments = await Enrollment.getUserEnrollments(userId);
-  
-      // Format all courses in a single array
-      const allCourses = enrollments.map(enrollment => ({
-        enrollmentId: enrollment._id,
-        enrolledAt: enrollment.enrolledAt,
-        expiresAt: enrollment.expiresAt,
-        daysRemaining: enrollment.daysRemaining,
-        isExpired: enrollment.isExpired,
-        enrollmentType: enrollment.enrollmentType,
-        progress: enrollment.progress,
-        course: enrollment.course
-      }));
-      myCourses = allCourses;
+    // Remove any courses the user is enrolled in from paid/free arrays
+    if (enrolledCourseIds.size > 0) {
+      paidCoursesResult.courses = paidCoursesResult.courses.filter(c => !enrolledCourseIds.has(c._id.toString()));
+      freeCoursesResult.courses = freeCoursesResult.courses.filter(c => !enrolledCourseIds.has(c._id.toString()));
     }
 
     res.status(200).json({
@@ -186,8 +197,8 @@ export const getAllCourses = asyncHandler(async (req, res, next) => {
       message: 'Courses retrieved successfully',
       data: {
         allCourses: allCoursesResult, // Contains pagination info
-        paidCourses: paidCoursesResult.courses, // All paid courses without pagination
-        freeCourses: freeCoursesResult.courses, // All free courses without pagination
+        paidCourses: paidCoursesResult.courses, // All paid courses (enrolled removed)
+        freeCourses: freeCoursesResult.courses, // All free courses (enrolled removed)
         myCourses: myCourses // User's enrolled courses (empty if not authenticated)
       }
     });
@@ -195,6 +206,7 @@ export const getAllCourses = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
 
 // Get course by ID with similar courses
 export const getCourseById = asyncHandler(async (req, res, next) => {

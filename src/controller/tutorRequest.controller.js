@@ -13,7 +13,7 @@ import { User } from '../model/user.model.js';
 export const requestTutor = asyncHandler(async (req, res, next) => {
   try {
     const { musicianId, firstName, lastName, email, topic, message } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     // Validate musicianId
     if (!musicianId) {
@@ -91,7 +91,7 @@ export const requestTutor = asyncHandler(async (req, res, next) => {
 export const checkTutorRequestStatus = asyncHandler(async (req, res, next) => {
   try {
     const { musicianId } = req.query;
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     // Validate musicianId
     if (!musicianId) {
