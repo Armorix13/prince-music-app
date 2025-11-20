@@ -19,6 +19,10 @@ import {
 } from '../utils/helpers.js';
 import { User } from '../model/user.model.js';
 import { Musician } from '../model/musician.model.js';
+import { Section } from '../model/section.model.js';
+import { Course } from '../model/course.model.js';
+import { Enrollment } from '../model/enrollment.model.js';
+import { Advertisement } from '../model/advertisement.model.js';
 import { tokenBlacklist } from '../services/tokenBlacklist.js';
 import emailService from '../services/emailService.js';
 
@@ -50,31 +54,20 @@ export const signup = asyncHandler(async (req, res, next) => {
       }
     }
 
-    // Check if user already exists by email and musicianId combination
-    const existingUserByEmailAndMusician = await User.findOne({
-      email: emailUtils.normalizeEmail(email),
-      musicianId: musicianId
-    });
-    if (existingUserByEmailAndMusician) {
-      // If user exists but email is not verified, allow re-registration
-      if (!existingUserByEmailAndMusician.isEmailVerified) {
-        // Delete the unverified user to allow re-registration
-        await User.findByIdAndDelete(existingUserByEmailAndMusician._id);
-        console.log(`Deleted unverified user with email: ${email} and musicianId: ${musicianId}`);
-      } else {
-        throw new ConflictError('User with this email already exists for this musician and is verified');
-      }
-    }
+    const normalizedEmail = emailUtils.normalizeEmail(email);
 
-    // Check if user already exists by phone and musicianId combination (if provided)
-    if (phoneNumber && countryCode) {
-      const existingUserByPhoneAndMusician = await User.findOne({
-        phoneNumber,
-        countryCode,
-        musicianId: musicianId
-      });
-      if (existingUserByPhoneAndMusician) {
-        throw new ConflictError('User with this phone number already exists for this musician');
+    // Check if user already exists by email
+    const existingUserByEmail = await User.findOne({
+      email: normalizedEmail
+    });
+    if (existingUserByEmail) {
+      // If user exists but email is not verified, allow re-registration
+      if (!existingUserByEmail.isEmailVerified) {
+        // Delete the unverified user to allow re-registration
+        await User.findByIdAndDelete(existingUserByEmail._id);
+        console.log(`Deleted unverified user with email: ${email}`);
+      } else {
+        throw new ConflictError('User with this email already exists and is verified');
       }
     }
 
@@ -115,7 +108,7 @@ export const signup = asyncHandler(async (req, res, next) => {
     const userData = {
       firstName,
       lastName,
-      email: emailUtils.normalizeEmail(email),
+      email: normalizedEmail,
       countryCode,
       phoneNumber,
       dob,
@@ -1237,6 +1230,7 @@ export const deleteAccount = asyncHandler(async (req, res, next) => {
   try {
     const { password } = req.body;
     const userId = req.user.id;
+    console.log("userId:", userId);
 
     const user = await User.findById(userId);
     if (!user) {
@@ -1255,6 +1249,176 @@ export const deleteAccount = asyncHandler(async (req, res, next) => {
     await User.findByIdAndDelete(userId);
 
     responseUtils.success(res, 'Account deleted successfully');
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const dashboard = asyncHandler(async (req, res, next) => {
+  try {
+    console.log('Dashboard function called');
+    const userId = req.user.id;
+    console.log('Dashboard userId:', userId);
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    const musicianIdentifier = req.user.musicianId || user.musicianId;
+    if (!musicianIdentifier) {
+      throw new BadRequestError('Musician context is missing for this user');
+    }
+
+    // Fetch musician profile & enrollments concurrently
+    const [musician, enrollments] = await Promise.all([
+      Musician.findOne({ musicianId: musicianIdentifier, isActive: true }).lean(),
+      Enrollment.find({ user: userId }).select('course').lean()
+    ]);
+
+    if (!musician) {
+      throw new NotFoundError('Musician not found');
+    }
+
+    console.log(musician);
+    console.log(musician._id);
+
+    const sections = await Section.find({
+      musicianId: musician._id,
+      isActive: true
+    })
+      .sort({ order: 1 })
+      .lean();
+
+    const portfolioData = {
+      musicianId: musician.musicianId,
+      coverPhoto: musician.coverPhoto,
+      profilePhoto: musician.profilePhoto,
+      name: musician.name,
+      description: musician.description,
+      mail: musician.mail,
+      contact: musician.contact,
+      location: musician.location,
+      socialMedia: musician.socialMedia,
+      sections: sections.map(section => ({
+        title: section.title,
+        description: section.description,
+        content: (section.content || []).map(item => ({
+          title: item.title,
+          url: item.url,
+          description: item.description,
+          thumbnail: item.thumbnail,
+          duration: item.duration,
+          order: item.order
+        }))
+      }))
+    };
+
+    const enrolledCourseIds = enrollments
+      .map(enrollment => enrollment.course)
+      .filter(Boolean);
+
+    console.log('Dashboard musician._id:', musician._id);
+    console.log('Dashboard musician._id type:', typeof musician._id);
+    console.log('Dashboard musician._id string:', String(musician._id));
+    
+    // Debug: Check all courses first
+    const allCourses = await Course.find({ isActive: true }).select('_id title musicianId').limit(10).lean();
+    console.log('Dashboard all active courses sample:', allCourses.map(c => ({
+      id: c._id,
+      title: c.title,
+      musicianId: c.musicianId,
+      musicianIdType: typeof c.musicianId,
+      musicianIdString: String(c.musicianId)
+    })));
+
+    const courseFilter = {
+      isActive: true,
+      musicianId: musician._id
+    };
+    if (enrolledCourseIds.length > 0) {
+      courseFilter._id = { $nin: enrolledCourseIds };
+    }
+
+    console.log('Dashboard courseFilter:', JSON.stringify(courseFilter, null, 2));
+
+    const availableCourses = await Course.find(courseFilter)
+      .select('title description thumbnail courseType price category duration level rating enrollmentCount')
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
+
+    console.log('Dashboard availableCourses count:', availableCourses.length);
+    availableCourses.forEach(course => {
+      console.log('Dashboard course:', {
+        id: course._id,
+        title: course.title,
+        courseType: course.courseType,
+        musicianId: course.musicianId
+      });
+    });
+
+    const pickRandomItems = (items, count) => {
+      const pool = [...items];
+      const picks = [];
+      while (pool.length && picks.length < count) {
+        const index = Math.floor(Math.random() * pool.length);
+        picks.push(pool.splice(index, 1)[0]);
+      }
+      return picks;
+    };
+
+    const paidCoursesPool = availableCourses.filter(course => course.courseType === 1);
+    const freeCoursesPool = availableCourses.filter(course => course.courseType === 2);
+
+    console.log('Dashboard paidCoursesPool:', paidCoursesPool.length);
+    console.log('Dashboard freeCoursesPool:', freeCoursesPool.length);
+
+    const paidCourses = pickRandomItems(paidCoursesPool, 3);
+    const freeCourses = pickRandomItems(freeCoursesPool, 3);
+
+    const combinedCourseIds = new Set([...paidCourses, ...freeCourses].map(course => String(course?._id)));
+    const remainingCoursesPool = availableCourses.filter(course => !combinedCourseIds.has(String(course._id)));
+
+    const recommendedCourseDocs = [
+      ...paidCourses,
+      ...freeCourses,
+      ...pickRandomItems(remainingCoursesPool, Math.max(0, 6 - (paidCourses.length + freeCourses.length)))
+    ].filter(Boolean).slice(0, 6);
+
+    const recommendedCourses = recommendedCourseDocs.map(course => ({
+      id: course._id,
+      title: course.title,
+      description: course.description,
+      thumbnail: course.thumbnail,
+      type: course.courseType === 1 ? 'paid' : 'free',
+      price: course.price,
+      category: course.category,
+      duration: course.duration,
+      level: course.level,
+      rating: course.rating,
+      enrollmentCount: course.enrollmentCount
+    }));
+
+    console.log('Dashboard recommendedCourses:', recommendedCourses);
+
+    const advertisement = await Advertisement.find()
+      .sort({ createdAt: -1 })
+      .select('title description photoUrl')
+      .lean();
+
+    const announcement = advertisement || {
+      title: 'Stay tuned for upcoming announcements',
+      description: 'We will keep you informed about the latest events and offers right here.',
+      photoUrl: null
+    };
+
+    return responseUtils.success(res, 'Dashboard data fetched successfully', {
+      portfolio: portfolioData,
+      recommendedCourses,
+      announcement
+    });
 
   } catch (error) {
     next(error);

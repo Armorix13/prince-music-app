@@ -18,7 +18,8 @@ import {
   logout,
   logoutAll,
   refreshToken,
-  deleteAccount
+  deleteAccount,
+  dashboard
 } from '../controller/user.controller.js';
 import { validateBody } from '../middlewares/validation.js';
 import { 
@@ -100,5 +101,6 @@ router.post('/change-password', validateBody(changePasswordSchema), changePasswo
 router.post('/logout', logout);
 router.post('/logout-all', logoutAll);
 router.delete('/account', validateBody(Joi.object({ password: Joi.string().optional() })), deleteAccount);
+router.get('/dashboard',authenticate, dashboard);
 
 export default router;

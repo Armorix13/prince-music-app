@@ -1,0 +1,152 @@
+{
+	"info": {
+		"name": "Notation API",
+		"description": "API collection for Notation requests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Add Notation Request",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text",
+						"description": "Optional: Include if user is authenticated"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"musicianId\": 1,\n  \"songName\": \"Example Song Name\",\n  \"songReferenceUrl\": \"https://example.com/song-reference\",\n  \"videoUrl\": \"https://www.youtube.com/watch?v=example\",\n  \"audioUrl\": \"https://example.com/audio.mp3\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/notations",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"notations"
+					]
+				},
+				"description": "Add a new notation request. All fields except songName and musicianId are optional."
+			},
+			"response": []
+		},
+		{
+			"name": "Add Notation Request (Minimal)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"musicianId\": 1,\n  \"songName\": \"Example Song Name\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/notations",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"notations"
+					]
+				},
+				"description": "Minimal notation request with only required fields"
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Notations",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text",
+						"description": "Optional: Include if user is authenticated"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/notations?page=1&limit=10&musicianId=1&status=pending",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"notations"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1",
+							"description": "Page number (default: 1)"
+						},
+						{
+							"key": "limit",
+							"value": "10",
+							"description": "Items per page (default: 10, max: 100)"
+						},
+						{
+							"key": "musicianId",
+							"value": "1",
+							"description": "Filter by musician ID (optional)"
+						},
+						{
+							"key": "status",
+							"value": "pending",
+							"description": "Filter by status: pending, in-progress, completed, rejected (optional)"
+						},
+						{
+							"key": "myNotations",
+							"value": "true",
+							"description": "Get only authenticated user's notations (optional, requires auth)"
+						}
+					]
+				},
+				"description": "Get all notation requests with optional filtering by musicianId and status"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+
